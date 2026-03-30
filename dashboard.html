@@ -191,10 +191,24 @@ body { font-family:'Jost',sans-serif; background:var(--cream); color:var(--text)
     <div class="hero-eyebrow">Owner Dashboard</div>
     <div class="hero-title">My Cup Overflows 🍵</div>
     <div class="hero-sub">Sunday, April 5 · Cross Culture Church</div>
+    <!-- Total Revenue Banner -->
+    <div style="margin-top:18px;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.4);border-radius:16px;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:1;">
+      <div>
+        <div style="font-size:10px;letter-spacing:0.3em;color:var(--gold);text-transform:uppercase;margin-bottom:4px;">Total Revenue</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:36px;color:var(--cream);line-height:1;" id="total-revenue">$0</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:10px;letter-spacing:0.2em;color:var(--gold-light);text-transform:uppercase;margin-bottom:4px;">Total Orders</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:28px;color:var(--cream);line-height:1;" id="total-orders">0</div>
+      </div>
+    </div>
   </div>
   <div class="top-bar">
     <button class="logout-btn" onclick="logout()">← Log out</button>
-    <button class="sheets-btn" onclick="openConfig()">📊 Google Sheets</button>
+    <div style="display:flex;gap:8px;">
+      <a href="inventory.html" style="font-size:11px;color:var(--gold);background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.35);border-radius:8px;padding:5px 12px;text-decoration:none;display:flex;align-items:center;gap:4px;">📦 Inventory</a>
+      <button class="sheets-btn" onclick="openConfig()">📊 Google Sheets</button>
+    </div>
   </div>
 
   <!-- Main tabs -->
@@ -290,6 +304,12 @@ body { font-family:'Jost',sans-serif; background:var(--cream); color:var(--text)
       </div>
       <div class="subcat-divider"></div>
       <div id="list-afternoon-ready"></div>
+    </div>
+
+    <!-- Clear all for testing -->
+    <div style="margin-top:16px;padding-top:16px;border-top:2px dashed var(--cream-dark);text-align:center;">
+      <div style="font-size:10px;letter-spacing:0.2em;color:var(--text-soft);text-transform:uppercase;margin-bottom:10px;">Testing Only</div>
+      <button class="btn btn-delete" onclick="clearAllPreorders()">🗑 Clear All Pre-Orders</button>
     </div>
   </div>
 
@@ -433,6 +453,11 @@ function renderAll() {
   const actionable = orders.filter(o => !o.walkin && (o.status === 'pending' || o.status === 'confirmed'));
   document.getElementById('badge-walkin').textContent   = walkins.length;
   document.getElementById('badge-preorder').textContent = actionable.length;
+  // Total revenue banner
+  const totalRev    = orders.reduce((s,o) => s + o.total, 0);
+  const totalOrders = orders.length;
+  document.getElementById('total-revenue').textContent = '$' + totalRev;
+  document.getElementById('total-orders').textContent  = totalOrders;
 }
 
 // ── WALK-INS ──
@@ -586,6 +611,7 @@ function fillSubcat(listId, items, type, icon, emptyMsg) {
         <div class="order-actions">
           <button class="btn btn-ticket" onclick="openTicket(${o.id})">🎫</button>
           ${smsBtn}${actions}
+          <button class="btn btn-delete" onclick="deletePreorder(${o.id})">🗑</button>
         </div>
       </div>`;
     el.appendChild(card);
@@ -625,6 +651,20 @@ function clearPickedUp() {
   orders = orders.filter(o => !(o.status==='picked' && !o.walkin));
   save(); renderAll();
   showToast('Cleared picked-up orders');
+}
+
+function deletePreorder(id) {
+  if (!confirm('Delete this pre-order? Cannot be undone.')) return;
+  orders = orders.filter(o => o.id !== id);
+  save(); renderAll();
+  showToast('🗑 Pre-order deleted');
+}
+
+function clearAllPreorders() {
+  if (!confirm('Clear ALL pre-orders? This cannot be undone.')) return;
+  orders = orders.filter(o => o.walkin);
+  save(); renderAll();
+  showToast('🗑 All pre-orders cleared');
 }
 
 function tapToText(id) {
