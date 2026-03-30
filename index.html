@@ -485,6 +485,28 @@ let modalItem = null;
 let modalSweetness = 'Regular';
 let modalIce = 'Regular Ice';
 
+// ── Your Google Sheets URL ──
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyMUP1Op7Wra8m3a25wFLH9aIsgtkorudZKOjptBiMxPYVFWnsbWwPFG6F_xXvUqJTj/exec';
+
+function logToSheets(order) {
+  const items = Object.values(order.items).map(({name,qty}) => `${qty}x ${name}`).join(', ');
+  fetch(SHEETS_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      timestamp: new Date().toLocaleString(),
+      type:      'Pre-Order',
+      name:      order.name,
+      phone:     order.phone,
+      items:     items,
+      total:     order.total,
+      slot:      order.slot,
+      status:    'Pending Payment'
+    })
+  }).catch(() => {});
+}
+
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -592,7 +614,9 @@ function submitOrder() {
   const phone = document.getElementById('custPhone').value.trim();
   if (!firstName) { showToast('Please enter your first name'); return; }
   if (!lastName)  { showToast('Please enter your last name'); return; }
-  if (!phone)     { showToast('Please enter your phone number'); return; }
+  if (!phone) { showToast('Please enter your phone number'); return; }
+  const digitsOnly = phone.replace(/\D/g, '');
+  if (digitsOnly.length !== 10) { showToast('Please enter a valid 10-digit phone number'); return; }
   if (!selectedSlot) {
     document.getElementById('slot-error').style.display = 'block';
     document.querySelectorAll('.slot:not(.disabled)').forEach(s => s.classList.add('error'));
@@ -629,8 +653,9 @@ function confirmOrder() {
   if (!currentOrder) return;
   orders.push(currentOrder);
   localStorage.setItem('mco_orders', JSON.stringify(orders));
-  const items = Object.values(currentOrder.items).map(({name,qty,price,sweetness,ice}) =>
-    `<div class="confirm-row"><span>${qty}× ${name}<br><small style="color:var(--text-soft)">${sweetness} · ${ice}</small></span><strong>$${qty*price}</strong></div>`
+  logToSheets(currentOrder);
+  const items = Object.values(currentOrder.items).map(({name,qty,price,sweetness}) =>
+    `<div class="confirm-row"><span>${qty}× ${name}<br><small style="color:var(--text-soft)">${sweetness}</small></span><strong>$${qty*price}</strong></div>`
   ).join('');
   document.getElementById('confirmDetails').innerHTML = `${items}
     <div class="confirm-row"><span>Total</span><strong style="color:var(--green-dark)">$${currentOrder.total}</strong></div>
