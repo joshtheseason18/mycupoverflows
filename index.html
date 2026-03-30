@@ -600,6 +600,9 @@ function showTab(tab) {
     showPage('page-menu');
     syncCartCounters();
   } else {
+    // Always reset back to order form — not payment screen
+    document.getElementById('orderFormSection').style.display = 'block';
+    document.getElementById('paySection').style.display = 'none';
     buildSummary();
     showPage('page-order');
   }
@@ -670,7 +673,10 @@ function renderCartBar() {
 }
 function goToOrder() {
   if (!cartCount()) { showToast('Add something first!'); return; }
-  buildSummary(); showPage('page-order');
+  document.getElementById('orderFormSection').style.display = 'block';
+  document.getElementById('paySection').style.display = 'none';
+  buildSummary();
+  showPage('page-order');
 }
 function buildSummary() {
   const c = document.getElementById('summaryItems');
@@ -688,7 +694,7 @@ function buildSummary() {
         <span style="font-weight:500;">${qty}× ${name}</span>
         <div style="display:flex;align-items:center;gap:12px;">
           <span>$${qty*price}</span>
-          <button onclick="removeFromSummary('${key}')" style="background:none;border:none;cursor:pointer;font-size:15px;color:#cc6666;padding:0;line-height:1;">🗑</button>
+          <button onclick="removeFromSummary('${key}')" style="background:none;border:none;cursor:pointer;font-size:15px;color:#cc6666;padding:0;line-height:1;">✕</button>
         </div>
       </div>
       ${sweetness ? `<div style="font-size:11px;color:var(--text-soft);">${sweetness}</div>` : ''}`;
