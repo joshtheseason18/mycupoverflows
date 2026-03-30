@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>My Cup Overflows</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --green:       #4a6e42;
+  --green-dark:  #2d5c3a;
+  --green-light: #7a9e72;
+  --green-pale:  #d4e8c8;
+  --gold:        #c9a84c;
+  --gold-light:  #e8d48a;
+  --cream:       #f2ece0;
+  --cream-dark:  #e0d8c4;
+  --text:        #2a3828;
+  --text-mid:    #5a6e4e;
+  --text-soft:   #8a9e82;
+  --white:       #fdfaf5;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body { font-family:'Jost',sans-serif; background:var(--cream); color:var(--text); min-height:100vh; }
+
+.page { display:none; min-height:100vh; }
+.page.active { display:block; }
+
+.hero {
+  background:var(--green-dark); padding:48px 24px 40px;
+  text-align:center; position:relative; overflow:hidden;
+}
+.hero::before {
+  content:''; position:absolute; inset:0;
+  background:radial-gradient(ellipse at 50% -20%, rgba(201,168,76,0.18) 0%, transparent 70%);
+  pointer-events:none;
+}
+.hero-eyebrow { font-size:10px; letter-spacing:0.4em; color:var(--gold); text-transform:uppercase; margin-bottom:8px; }
+.hero-title { font-family:'DM Serif Display',serif; font-size:clamp(32px,8vw,52px); color:var(--cream); line-height:1.05; margin-bottom:6px; }
+.hero-verse { font-family:'DM Serif Display',serif; font-style:italic; font-size:14px; color:var(--gold-light); opacity:0.85; margin-bottom:24px; }
+.event-badge {
+  display:inline-flex; flex-direction:column; gap:4px;
+  background:rgba(255,255,255,0.08); border:1px solid rgba(201,168,76,0.35);
+  border-radius:16px; padding:14px 22px; color:var(--cream); font-size:13px; line-height:1.5;
+}
+.event-badge strong { color:var(--gold); font-weight:600; font-size:14px; }
+
+.tab-bar { display:flex; background:var(--green-dark); border-top:1px solid rgba(255,255,255,0.08); padding:0 16px; gap:4px; }
+.tab { flex:1; padding:13px 8px; text-align:center; font-size:12px; letter-spacing:0.08em; color:rgba(255,255,255,0.45); cursor:pointer; border-bottom:2px solid transparent; transition:all 0.2s; user-select:none; }
+.tab.active { color:var(--gold); border-bottom-color:var(--gold); }
+
+.section { max-width:640px; margin:0 auto; padding:28px 16px; }
+
+.cat-label { font-size:10px; letter-spacing:0.35em; text-transform:uppercase; color:var(--text-soft); margin:24px 0 12px; display:flex; align-items:center; gap:10px; }
+.cat-label::after { content:''; flex:1; height:1px; background:var(--cream-dark); }
+
+.menu-card { background:var(--white); border-radius:18px; padding:16px 18px; display:flex; align-items:center; gap:14px; margin-bottom:10px; box-shadow:0 2px 14px rgba(42,56,40,0.07); transition:transform 0.15s; }
+.menu-card:active { transform:scale(0.985); }
+.item-icon { width:52px; height:52px; background:var(--green-pale); border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:26px; flex-shrink:0; }
+.item-body { flex:1; min-width:0; }
+.item-num { font-family:'DM Serif Display',serif; font-size:13px; color:var(--gold); font-weight:600; margin-right:6px; opacity:0.85; }
+.item-desc { font-size:11px; color:var(--text-soft); line-height:1.45; margin-top:3px; margin-bottom:4px; }
+.item-tag { display:inline-block; font-size:10px; letter-spacing:0.06em; padding:2px 8px; border-radius:20px; margin-top:2px; font-weight:500; }
+.tag-df   { background:var(--green-pale); color:var(--green-dark); }
+.tag-dairy{ background:#fef3dc; color:#8a6020; }
+.tag-foam { background:#fef3dc; color:#8a6020; }
+.item-right { display:flex; flex-direction:column; align-items:flex-end; gap:8px; flex-shrink:0; }
+.item-price { font-weight:600; font-size:17px; color:var(--green-dark); }
+.item-price span { font-size:11px; font-weight:400; color:var(--text-soft); display:block; text-align:right; }
+.qty-ctrl { display:flex; align-items:center; gap:10px; }
+.qty-btn { width:30px; height:30px; border-radius:50%; border:none; cursor:pointer; font-size:18px; line-height:1; display:flex; align-items:center; justify-content:center; transition:background 0.15s; }
+.qty-btn.minus { background:var(--cream-dark); color:var(--text-mid); }
+.qty-btn.plus  { background:var(--green-dark); color:var(--cream); }
+.qty-num { font-weight:600; font-size:15px; min-width:16px; text-align:center; color:var(--text); }
+
+.cart-bar { position:fixed; bottom:0; left:0; right:0; background:var(--green-dark); padding:14px 20px calc(14px + env(safe-area-inset-bottom)); display:flex; align-items:center; justify-content:space-between; box-shadow:0 -4px 24px rgba(0,0,0,0.18); transform:translateY(100%); transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1); z-index:100; }
+.cart-bar.visible { transform:translateY(0); }
+.cart-info { color:var(--cream); }
+.cart-count { font-size:12px; opacity:0.7; margin-bottom:2px; }
+.cart-total { font-family:'DM Serif Display',serif; font-size:22px; color:var(--gold); }
+.cart-btn { background:var(--gold); color:var(--green-dark); border:none; border-radius:14px; padding:13px 24px; font-family:'Jost',sans-serif; font-weight:700; font-size:14px; letter-spacing:0.04em; cursor:pointer; }
+
+.order-form { padding-bottom:40px; }
+.form-title { font-family:'DM Serif Display',serif; font-size:26px; color:var(--text); margin-bottom:4px; }
+.form-sub { font-size:13px; color:var(--text-soft); margin-bottom:24px; }
+.order-summary { background:var(--white); border-radius:18px; padding:18px; margin-bottom:20px; box-shadow:0 2px 14px rgba(42,56,40,0.07); }
+.summary-title { font-size:11px; letter-spacing:0.25em; text-transform:uppercase; color:var(--text-soft); margin-bottom:14px; }
+.summary-item { display:flex; justify-content:space-between; font-size:14px; padding:7px 0; border-bottom:1px solid var(--cream-dark); }
+.summary-item:last-child { border:none; font-weight:600; font-size:15px; color:var(--green-dark); }
+.field-group { margin-bottom:14px; }
+label { display:block; font-size:12px; letter-spacing:0.1em; color:var(--text-mid); margin-bottom:6px; text-transform:uppercase; }
+input,select,textarea { width:100%; background:var(--white); border:1.5px solid var(--cream-dark); border-radius:12px; padding:13px 16px; font-family:'Jost',sans-serif; font-size:15px; color:var(--text); outline:none; transition:border-color 0.2s; appearance:none; }
+input:focus,select:focus,textarea:focus { border-color:var(--green-dark); }
+textarea { resize:vertical; min-height:80px; }
+.pickup-slots { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+.slot { background:var(--white); border:2px solid var(--cream-dark); border-radius:14px; padding:14px 12px; text-align:center; cursor:pointer; transition:all 0.18s; user-select:none; }
+.slot.selected { border-color:var(--green-dark); background:var(--green-pale); }
+.slot.disabled { opacity:0.4; cursor:not-allowed; background:var(--cream-dark); }
+.slot-time { font-weight:600; font-size:15px; color:var(--text); }
+.slot-label { font-size:11px; color:var(--text-soft); margin-top:3px; }
+.slot-cutoff { font-size:10px; color:var(--text-soft); margin-top:4px; opacity:0.7; }
+.slot.error { border-color: #cc4444 !important; background: #fff5f5; }
+.slot.selected .slot-label { color:var(--green-dark) !important; }
+.submit-btn { width:100%; background:var(--green-dark); color:var(--cream); border:none; border-radius:16px; padding:17px; font-family:'DM Serif Display',serif; font-size:19px; letter-spacing:0.04em; cursor:pointer; margin-top:8px; transition:background 0.2s; }
+.submit-btn:hover { background:var(--green); }
+
+.pay-section { background:var(--white); border-radius:20px; padding:28px 24px; text-align:center; box-shadow:0 2px 14px rgba(42,56,40,0.07); margin-bottom:16px; }
+.pay-title { font-family:'DM Serif Display',serif; font-size:22px; color:var(--text); margin-bottom:6px; }
+.pay-amount { font-size:38px; font-weight:700; color:var(--green-dark); margin:10px 0; }
+.pay-sub { font-size:13px; color:var(--text-soft); margin-bottom:22px; }
+.pay-btns { display:flex; gap:12px; }
+.pay-btn { flex:1; padding:15px 10px; border-radius:14px; border:2px solid; font-family:'Jost',sans-serif; font-weight:600; font-size:15px; cursor:pointer; letter-spacing:0.02em; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:6px; transition:opacity 0.2s; }
+.pay-btn:hover { opacity:0.85; }
+.pay-venmo { border-color:#3D95CE; color:#3D95CE; background:#EAF5FF; }
+.pay-zelle { border-color:#6D1ED4; color:#6D1ED4; background:#F3EAFF; }
+.note-box { background:#fff8e8; border:1px solid #e8c97a; border-radius:14px; padding:14px 18px; font-size:13px; color:#8a6020; line-height:1.6; text-align:left; }
+
+.confirm-screen { text-align:center; padding:60px 24px 40px; }
+.confirm-icon { font-size:64px; margin-bottom:20px; }
+.confirm-title { font-family:'DM Serif Display',serif; font-size:30px; color:var(--green-dark); margin-bottom:8px; }
+.confirm-sub { font-size:15px; color:var(--text-soft); line-height:1.6; margin-bottom:32px; }
+.confirm-card { background:var(--white); border-radius:18px; padding:20px; text-align:left; box-shadow:0 2px 14px rgba(42,56,40,0.07); margin-bottom:20px; }
+.confirm-row { display:flex; justify-content:space-between; font-size:14px; padding:8px 0; border-bottom:1px solid var(--cream-dark); color:var(--text-mid); }
+.confirm-row:last-child { border:none; }
+.confirm-row strong { color:var(--text); }
+.back-btn { background:none; border:2px solid var(--green-dark); color:var(--green-dark); border-radius:14px; padding:13px 28px; font-family:'Jost',sans-serif; font-weight:600; font-size:14px; cursor:pointer; }
+
+.toast { position:fixed; bottom:90px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--green-dark); color:var(--cream); border-radius:30px; padding:12px 22px; font-size:14px; font-weight:500; opacity:0; transition:all 0.3s; z-index:200; white-space:nowrap; pointer-events:none; }
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+.menu-page-content { padding-bottom:100px; }
+
+/* Modal */
+.modal-overlay { position:fixed; inset:0; background:rgba(20,30,20,0.55); z-index:300; display:flex; align-items:flex-end; opacity:0; pointer-events:none; transition:opacity 0.25s; }
+.modal-overlay.open { opacity:1; pointer-events:all; }
+.modal-sheet { background:var(--white); border-radius:28px 28px 0 0; width:100%; max-width:640px; margin:0 auto; padding:28px 24px 40px; transform:translateY(100%); transition:transform 0.3s cubic-bezier(0.34,1.2,0.64,1); }
+.modal-overlay.open .modal-sheet { transform:translateY(0); }
+.modal-handle { width:40px; height:4px; border-radius:2px; background:var(--cream-dark); margin:0 auto 20px; }
+.modal-drink-name { font-family:'DM Serif Display',serif; font-size:22px; color:var(--text); margin-bottom:4px; }
+.modal-price { font-size:14px; color:var(--text-soft); margin-bottom:24px; }
+.custom-section { margin-bottom:20px; }
+.custom-label { font-size:11px; letter-spacing:0.2em; text-transform:uppercase; color:var(--text-soft); margin-bottom:10px; }
+.chip-row { display:flex; gap:8px; flex-wrap:wrap; }
+.chip { padding:8px 16px; border-radius:30px; border:1.5px solid var(--cream-dark); background:var(--white); font-family:'Jost',sans-serif; font-size:13px; font-weight:500; color:var(--text-mid); cursor:pointer; transition:all 0.15s; user-select:none; }
+.chip.selected { border-color:var(--green-dark); background:var(--green-pale); color:var(--green-dark); }
+.modal-add-btn { width:100%; background:var(--green-dark); color:var(--cream); border:none; border-radius:16px; padding:16px; font-family:'DM Serif Display',serif; font-size:18px; letter-spacing:0.04em; cursor:pointer; margin-top:8px; transition:background 0.2s; }
+.modal-add-btn:hover { background:var(--green); }
+</style>
+</head>
+<body>
+
+<!-- ══ MENU PAGE ══ -->
+<div id="page-menu" class="page active">
+  <div class="hero">
+    <div class="hero-eyebrow">Easter Pop-Up</div>
+    <div class="hero-title">My Cup<br>Overflows</div>
+    <div class="hero-verse">— Psalm 23:5</div>
+    <div class="event-badge">
+      <strong>📍 Cross Culture Church</strong>
+      <span>Sunday, April 5 · 9:45–10:20am &amp; 12:00–1:00pm</span>
+    </div>
+    <div style="margin-top:12px;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.4);border-radius:12px;padding:10px 18px;font-size:12px;color:var(--gold-light);">
+      ⏰ Pre-order cut-off: Saturday, April 4 at 11:59PM
+    </div>
+  </div>
+  <div class="tab-bar">
+    <div class="tab active" onclick="showTab('menu')">Menu</div>
+    <div class="tab" onclick="showTab('order')">Order</div>
+  </div>
+  <div class="menu-page-content">
+    <div class="section">
+
+      <p style="text-align:center;font-size:13px;color:var(--text-soft);font-style:italic;margin-bottom:20px;letter-spacing:0.04em;">✨ All drinks are served iced ✨</p>
+
+      <!-- ── DAIRY FREE ── -->
+      <div class="cat-label">🌿 Dairy Free · $6</div>
+
+      <div class="menu-card">
+        <div class="item-icon">🍵</div>
+        <div class="item-body">
+          <div class="item-name"><span class="item-num">#1</span> Matcha Latte <span style="font-size:13px;font-family:'Jost',sans-serif;font-weight:400;color:var(--text-soft);">(Oat Milk)</span></div>
+          <div class="item-desc">Ceremonial grade matcha whisked smooth with creamy oat milk. Clean, earthy, and light.</div>
+          <span class="item-tag tag-df">Dairy Free</span>
+        </div>
+        <div class="item-right">
+          <div class="item-price">$6</div>
+          <div class="qty-ctrl">
+            <button class="qty-btn minus" onclick="updateCart('Matcha Latte (DF)',-1,6,'qty-mdf')">−</button>
+            <span class="qty-num" id="qty-mdf">0</span>
+            <button class="qty-btn plus" onclick="openModal('Matcha Latte (DF)',6,'qty-mdf')">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="menu-card">
+        <div class="item-icon">🥭</div>
+        <div class="item-body">
+          <div class="item-name"><span class="item-num">#2</span> Mango Matcha Latte <span style="font-size:13px;font-family:'Jost',sans-serif;font-weight:400;color:var(--text-soft);">(Oat Milk)</span></div>
+          <div class="item-desc">Mango purée on the bottom, oat milk as the base, finished with ceremonial matcha poured straight in. Fruity, creamy, and bold in every sip.</div>
+          <span class="item-tag tag-df">Dairy Free</span>
+        </div>
+        <div class="item-right">
+          <div class="item-price">$6</div>
+          <div class="qty-ctrl">
+            <button class="qty-btn minus" onclick="updateCart('Mango Matcha Latte (DF)',-1,6,'qty-mmdf')">−</button>
+            <span class="qty-num" id="qty-mmdf">0</span>
+            <button class="qty-btn plus" onclick="openModal('Mango Matcha Latte (DF)',6,'qty-mmdf')">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="menu-card">
+        <div class="item-icon">🥥</div>
+        <div class="item-body">
+          <div class="item-name"><span class="item-num">#3</span> Coconut Matcha <span style="font-size:13px;font-family:'Jost',sans-serif;font-weight:400;color:var(--text-soft);">(Dairy Free)</span></div>
+          <div class="item-desc">Light coconut water base with ceremonial matcha whisked and poured right on top. Clean, refreshing, and naturally sweet.</div>
+          <span class="item-tag tag-df">Dairy Free</span>
+        </div>
+        <div class="item-right">
+          <div class="item-price">$6</div>
+          <div class="qty-ctrl">
+            <button class="qty-btn minus" onclick="updateCart('Coconut Matcha',-1,6,'qty-cdf')">−</button>
+            <span class="qty-num" id="qty-cdf">0</span>
+            <button class="qty-btn plus" onclick="openModal('Coconut Matcha',6,'qty-cdf')">+</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── WHOLE MILK ── -->
+      <div class="cat-label">🥛 Whole Milk · $6</div>
+
+      <div class="menu-card">
+        <div class="item-icon">🍵</div>
+        <div class="item-body">
+          <div class="item-name"><span class="item-num">#4</span> Matcha Latte</div>
+          <div class="item-desc">Ceremonial matcha with rich whole milk — creamy, bold, and satisfying.</div>
+          <span class="item-tag tag-dairy">Whole Milk</span>
+        </div>
+        <div class="item-right">
+          <div class="item-price">$6</div>
+          <div class="qty-ctrl">
+            <button class="qty-btn minus" onclick="updateCart('Matcha Latte (Dairy)',-1,6,'qty-md')">−</button>
+            <span class="qty-num" id="qty-md">0</span>
+            <button class="qty-btn plus" onclick="openModal('Matcha Latte (Dairy)',6,'qty-md')">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="menu-card">
+        <div class="item-icon">🥭</div>
+        <div class="item-body">
+          <div class="item-name"><span class="item-num">#5</span> Mango Matcha Latte</div>
+          <div class="item-desc">Mango purée on the bottom, whole milk as the base, finished with ceremonial matcha poured straight in. Fruity, creamy, and bold in every sip.</div>
+          <span class="item-tag tag-dairy">Whole Milk</span>
+        </div>
+        <div class="item-right">
+          <div class="item-price">$6</div>
+          <div class="qty-ctrl">
+            <button class="qty-btn minus" onclick="updateCart('Mango Matcha Latte (Dairy)',-1,6,'qty-mmd')">−</button>
+            <span class="qty-num" id="qty-mmd">0</span>
+            <button class="qty-btn plus" onclick="openModal('Mango Matcha Latte (Dairy)',6,'qty-mmd')">+</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── WHOLE MILK WITH FOAM ── -->
+      <div class="cat-label">☁️ Whole Milk with Foam · $7</div>
+
+      <div class="menu-card">
+        <div class="item-icon">🍵</div>
+        <div class="item-body">
+          <div class="item-name"><span class="item-num">#6</span> Matcha with Vanilla Cold Foam</div>
+          <div class="item-desc">Smooth iced matcha with whole milk, crowned with a sweet, pillowy vanilla cold foam. Classic and crowd-pleasing.</div>
+          <span class="item-tag tag-foam">Whole Milk with Foam</span>
+        </div>
+        <div class="item-right">
+          <div class="item-price">$7</div>
+          <div class="qty-ctrl">
+            <button class="qty-btn minus" onclick="updateCart('Matcha with Vanilla Cold Foam',-1,7,'qty-vcf')">−</button>
+            <span class="qty-num" id="qty-vcf">0</span>
+            <button class="qty-btn plus" onclick="openModal('Matcha with Vanilla Cold Foam',7,'qty-vcf')">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="menu-card">
+        <div class="item-icon">☁️</div>
+        <div class="item-body">
+          <div class="item-name"><span class="item-num">#7</span> Matcha with Matcha Cold Foam</div>
+          <div class="item-desc">Double matcha — iced matcha base topped with a thick, earthy matcha cold foam. For the true matcha lover.</div>
+          <span class="item-tag tag-foam">Whole Milk with Foam</span>
+        </div>
+        <div class="item-right">
+          <div class="item-price">$7</div>
+          <div class="qty-ctrl">
+            <button class="qty-btn minus" onclick="updateCart('Matcha with Matcha Cold Foam',-1,7,'qty-mcf')">−</button>
+            <span class="qty-num" id="qty-mcf">0</span>
+            <button class="qty-btn plus" onclick="openModal('Matcha with Matcha Cold Foam',7,'qty-mcf')">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="menu-card">
+        <div class="item-icon">🍌</div>
+        <div class="item-body">
+          <div class="item-name"><span class="item-num">#8</span> Matcha with Banana Cold Foam</div>
+          <div class="item-desc">Iced matcha with whole milk, topped with a creamy banana-infused cold foam. Tropical, smooth, and naturally sweet.</div>
+          <span class="item-tag tag-foam">Whole Milk with Foam</span>
+        </div>
+        <div class="item-right">
+          <div class="item-price">$7</div>
+          <div class="qty-ctrl">
+            <button class="qty-btn minus" onclick="updateCart('Matcha with Banana Cold Foam',-1,7,'qty-bcf')">−</button>
+            <span class="qty-num" id="qty-bcf">0</span>
+            <button class="qty-btn plus" onclick="openModal('Matcha with Banana Cold Foam',7,'qty-bcf')">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="menu-card">
+        <div class="item-icon">🥥</div>
+        <div class="item-body">
+          <div class="item-name"><span class="item-num">#9</span> Coconut Water with Matcha Cold Foam</div>
+          <div class="item-desc">Light, refreshing coconut water base topped with a silky matcha cold foam. The most unique drink on the menu.</div>
+          <span class="item-tag tag-foam">Whole Milk with Foam</span>
+        </div>
+        <div class="item-right">
+          <div class="item-price">$7</div>
+          <div class="qty-ctrl">
+            <button class="qty-btn minus" onclick="updateCart('Coconut Water with Matcha Cold Foam',-1,7,'qty-cwf')">−</button>
+            <span class="qty-num" id="qty-cwf">0</span>
+            <button class="qty-btn plus" onclick="openModal('Coconut Water with Matcha Cold Foam',7,'qty-cwf')">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="height:8px;"></div>
+    </div>
+  </div>
+  <div class="cart-bar" id="cartBar">
+    <div class="cart-info">
+      <div class="cart-count" id="cartCount">0 items</div>
+      <div class="cart-total" id="cartTotal">$0</div>
+    </div>
+    <button class="cart-btn" onclick="goToOrder()">Order →</button>
+  </div>
+</div>
+
+<!-- ══ ORDER PAGE ══ -->
+<div id="page-order" class="page">
+  <div class="hero" style="padding:32px 24px 28px;">
+    <div class="hero-eyebrow">Almost there!</div>
+    <div class="hero-title" style="font-size:28px;">Your Order</div>
+  </div>
+  <div class="tab-bar">
+    <div class="tab" onclick="showTab('menu')">Menu</div>
+    <div class="tab active" onclick="showTab('order')">Order</div>
+  </div>
+  <div class="section order-form" id="orderFormSection">
+    <div class="form-title">Place Your Order</div>
+    <div class="form-sub">Fill in your info and we'll have it ready for you 🍵</div>
+    <div class="order-summary">
+      <div class="summary-title">Order Summary</div>
+      <div id="summaryItems"></div>
+      <div class="summary-item"><span>Total</span><span id="summaryTotal">$0</span></div>
+    </div>
+    <div class="field-group">
+      <label>First Name <span style="color:#cc4444;font-size:11px;">*</span></label>
+      <input type="text" id="custFirstName" placeholder="First name" required/>
+    </div>
+    <div class="field-group">
+      <label>Last Name <span style="color:#cc4444;font-size:11px;">*</span></label>
+      <input type="text" id="custLastName" placeholder="Last name" required/>
+    </div>
+    <div class="field-group">
+      <label>Phone Number <span style="color:#cc4444;font-size:11px;">*</span></label>
+      <input type="tel" id="custPhone" placeholder="(xxx) xxx-xxxx" required/>
+    </div>
+    <div class="field-group">
+      <label>Choose Pickup Time <span style="color:#cc4444;font-size:11px;">*</span></label>
+      <div class="pickup-slots" id="pickupSlots">
+        <div class="slot" id="slot-morning" onclick="selectSlot(this,'Before Service · 9:45–10:20am')">
+          <div class="slot-label" style="font-weight:600;font-size:15px;color:var(--text);">Before Service</div>
+          <div class="slot-cutoff" id="morning-cutoff">9:45 – 10:20am</div>
+        </div>
+        <div class="slot" id="slot-afternoon" onclick="selectSlot(this,'After Service · 12:00–1:00pm')">
+          <div class="slot-label" style="font-weight:600;font-size:15px;color:var(--text);">After Service</div>
+          <div class="slot-cutoff">12:00 – 1:00pm</div>
+        </div>
+      </div>
+      <div id="slot-error" style="display:none;font-size:12px;color:#cc4444;margin-top:6px;">⚠️ Please choose a pickup time to continue.</div>
+      <div id="slot-notice" style="display:none;font-size:12px;color:#b8820a;background:#fff8e8;border-radius:10px;padding:10px 14px;margin-top:8px;">
+        ⏰ The morning session has closed. Please select the afternoon slot.
+      </div>
+    </div>
+    <button class="submit-btn" onclick="submitOrder()">Review & Pay →</button>
+  </div>
+  <div class="section" id="paySection" style="display:none;padding-bottom:40px;">
+
+    <!-- Amount banner -->
+    <div style="background:var(--green-dark);border-radius:20px;padding:24px;text-align:center;margin-bottom:16px;position:relative;overflow:hidden;">
+      <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% -20%,rgba(201,168,76,0.2) 0%,transparent 70%);pointer-events:none;"></div>
+      <div style="font-size:12px;letter-spacing:0.25em;text-transform:uppercase;color:var(--gold);margin-bottom:6px;">Amount Due</div>
+      <div id="payAmount" style="font-family:'DM Serif Display',serif;font-size:48px;color:var(--cream);line-height:1;"></div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:6px;">Send exact amount to confirm your order</div>
+    </div>
+
+    <!-- Choose payment label -->
+    <div style="font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:var(--text-soft);text-align:center;margin-bottom:14px;">Choose how to pay</div>
+
+    <!-- Venmo card -->
+    <a href="https://venmo.com/u/Josh-Sison-1" target="_blank" style="text-decoration:none;display:block;margin-bottom:12px;">
+      <div style="background:#EAF5FF;border:2px solid #3D95CE;border-radius:18px;padding:20px 22px;display:flex;align-items:center;gap:16px;transition:opacity 0.2s;" onmouseenter="this.style.opacity='.85'" onmouseleave="this.style.opacity='1'">
+        <div style="width:48px;height:48px;background:#3D95CE;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">💙</div>
+        <div style="flex:1;">
+          <div style="font-family:'DM Serif Display',serif;font-size:18px;color:#1a5c8c;">Pay with Venmo</div>
+          <div style="font-size:12px;color:#4a7a9e;margin-top:2px;">@Josh-Sison-1 · Opens the Venmo app</div>
+        </div>
+        <div style="font-size:20px;color:#3D95CE;">→</div>
+      </div>
+    </a>
+
+    <!-- Zelle card -->
+    <div style="background:#F3EAFF;border:2px solid #6D1ED4;border-radius:18px;padding:20px 22px;display:flex;align-items:center;gap:16px;cursor:pointer;" onclick="handleZellePay()" id="zelleCard">
+      <div style="width:48px;height:48px;background:#6D1ED4;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">💜</div>
+      <div style="flex:1;">
+        <div style="font-family:'DM Serif Display',serif;font-size:18px;color:#3d0d80;">Pay with Zelle</div>
+        <div style="font-size:12px;color:#7a4aae;margin-top:2px;">747-306-8426 · Tap to copy number</div>
+      </div>
+      <div style="font-size:20px;color:#6D1ED4;" id="zelleIcon">📋</div>
+    </div>
+
+    <div id="zelleCopiedMsg" style="display:none;font-size:12px;color:#6D1ED4;text-align:center;margin-top:8px;font-weight:500;">
+      ✓ Copied! Open your Zelle app and send to 747-306-8426
+    </div>
+
+    <!-- Divider -->
+    <div style="display:flex;align-items:center;gap:12px;margin:22px 0 18px;">
+      <div style="flex:1;height:1px;background:var(--cream-dark);"></div>
+      <div style="font-size:11px;color:var(--text-soft);letter-spacing:0.1em;">AFTER PAYING</div>
+      <div style="flex:1;height:1px;background:var(--cream-dark);"></div>
+    </div>
+
+    <button class="submit-btn" onclick="confirmOrder()">I've Paid — Confirm Order ✓</button>
+  </div>
+</div>
+
+<!-- ══ CONFIRMATION ══ -->
+<div id="page-confirm" class="page">
+  <div class="section confirm-screen">
+    <div class="confirm-icon">🎉</div>
+    <div class="confirm-title">You're all set!</div>
+    <div class="confirm-sub">Your order has been received! Once we confirm your payment, we'll text you when your drink is ready for pickup. See you Sunday! 🍵</div>
+    <div class="confirm-card" id="confirmDetails"></div>
+    <button class="back-btn" onclick="backToMenu()">← Back to Menu</button>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-drink-name" id="modalName"></div>
+    <div class="modal-price" id="modalPrice"></div>
+    <div class="custom-section">
+      <div class="custom-label">🍬 Sweetness</div>
+      <div class="chip-row" id="sweetnessChips">
+        <div class="chip" onclick="selectChip('sweetness',this,'No Sugar')">No Sugar</div>
+        <div class="chip" onclick="selectChip('sweetness',this,'Less Sweet')">Less Sweet</div>
+        <div class="chip selected" onclick="selectChip('sweetness',this,'Regular')">Regular</div>
+        <div class="chip" onclick="selectChip('sweetness',this,'Extra Sweet')">Extra Sweet</div>
+      </div>
+    </div>
+    <button class="modal-add-btn" onclick="addToCartFromModal()">Add to Order →</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let cart = {};
+let selectedSlot = '';
+let orders = JSON.parse(localStorage.getItem('mco_orders') || '[]');
+let currentOrder = null;
+let modalItem = null;
+let modalSweetness = 'Regular';
+let modalIce = 'Regular Ice';
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+function showTab(tab) {
+  if (tab === 'menu') showPage('page-menu');
+  else { buildSummary(); showPage('page-order'); }
+}
+
+function openModal(name, price, qtyElId) {
+  modalItem = { name, price, qtyElId };
+  modalSweetness = 'Regular';
+  document.getElementById('modalName').textContent = name;
+  document.getElementById('modalPrice').textContent = '$' + price;
+  document.querySelectorAll('#sweetnessChips .chip').forEach(c => c.classList.toggle('selected', c.textContent === 'Regular'));
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); modalItem = null; }
+function closeModalOutside(e) { if (e.target === document.getElementById('modalOverlay')) closeModal(); }
+function selectChip(group, el, value) {
+  const id = group === 'sweetness' ? 'sweetnessChips' : 'iceChips';
+  document.querySelectorAll(`#${id} .chip`).forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  if (group === 'sweetness') modalSweetness = value; else modalIce = value;
+}
+function addToCartFromModal() {
+  if (!modalItem) return;
+  const { name, price, qtyElId } = modalItem;
+  const key = `${name}||${modalSweetness}`;
+  if (!cart[key]) cart[key] = { name, price, qty:0, sweetness:modalSweetness, ice:'Regular Ice' };
+  cart[key].qty++;
+  if (qtyElId) {
+    const total = Object.values(cart).filter(v=>v.name===name).reduce((s,v)=>s+v.qty,0);
+    const el = document.getElementById(qtyElId);
+    if (el) el.textContent = total;
+  }
+  renderCartBar(); closeModal();
+  showToast(`Added — ${modalSweetness} 🍵`);
+}
+function updateCart(name, delta, price, qtyElId) {
+  if (delta < 0) {
+    const keys = Object.keys(cart).filter(k => cart[k].name === name);
+    if (!keys.length) return;
+    const last = keys[keys.length-1];
+    cart[last].qty = Math.max(0, cart[last].qty + delta);
+    if (cart[last].qty === 0) delete cart[last];
+    const total = Object.values(cart).filter(v=>v.name===name).reduce((s,v)=>s+v.qty,0);
+    const el = document.getElementById(qtyElId);
+    if (el) el.textContent = total;
+    renderCartBar();
+  }
+}
+function cartTotal() { return Object.values(cart).reduce((s,v)=>s+v.qty*v.price,0); }
+function cartCount() { return Object.values(cart).reduce((s,v)=>s+v.qty,0); }
+function renderCartBar() {
+  const total = cartTotal();
+  document.getElementById('cartCount').textContent = cartCount()+' item'+(cartCount()!==1?'s':'');
+  document.getElementById('cartTotal').textContent = '$'+total;
+  document.getElementById('cartBar').classList.toggle('visible', total > 0);
+}
+function goToOrder() {
+  if (!cartCount()) { showToast('Add something first!'); return; }
+  buildSummary(); showPage('page-order');
+}
+function buildSummary() {
+  const c = document.getElementById('summaryItems');
+  c.innerHTML = '';
+  if (!cartCount()) {
+    c.innerHTML = '<div style="color:var(--text-soft);font-size:13px;padding:8px 0;">No items yet!</div>';
+    document.getElementById('summaryTotal').textContent = '$0'; return;
+  }
+  Object.values(cart).forEach(({name,qty,price,sweetness,ice}) => {
+    const row = document.createElement('div');
+    row.className = 'summary-item';
+    row.style.cssText = 'flex-direction:column;align-items:flex-start;gap:2px;';
+    row.innerHTML = `<div style="display:flex;justify-content:space-between;width:100%;"><span style="font-weight:500;">${qty}× ${name}</span><span>$${qty*price}</span></div><div style="font-size:11px;color:var(--text-soft);">${sweetness} · ${ice}</div>`;
+    c.appendChild(row);
+  });
+  document.getElementById('summaryTotal').textContent = '$'+cartTotal();
+}
+function initSlots() {
+  // Morning slot closes at 10:20am on April 5 2026
+  const cutoff = new Date('2026-04-05T10:20:00');
+  const now = new Date();
+  const morningSlot = document.getElementById('slot-morning');
+  const notice = document.getElementById('slot-notice');
+  if (now >= cutoff) {
+    morningSlot.classList.add('disabled');
+    morningSlot.onclick = null;
+    document.getElementById('morning-cutoff').textContent = 'Closed';
+    notice.style.display = 'block';
+  }
+}
+function selectSlot(el, slot) {
+  if (el.classList.contains('disabled')) return;
+  document.querySelectorAll('.slot').forEach(s => { s.classList.remove('selected'); s.classList.remove('error'); });
+  el.classList.add('selected');
+  selectedSlot = slot;
+  document.getElementById('slot-error').style.display = 'none';
+}
+function submitOrder() {
+  const firstName = document.getElementById('custFirstName').value.trim();
+  const lastName  = document.getElementById('custLastName').value.trim();
+  const phone = document.getElementById('custPhone').value.trim();
+  if (!firstName) { showToast('Please enter your first name'); return; }
+  if (!lastName)  { showToast('Please enter your last name'); return; }
+  if (!phone)     { showToast('Please enter your phone number'); return; }
+  if (!selectedSlot) {
+    document.getElementById('slot-error').style.display = 'block';
+    document.querySelectorAll('.slot:not(.disabled)').forEach(s => s.classList.add('error'));
+    document.getElementById('pickupSlots').scrollIntoView({behavior:'smooth', block:'center'});
+    return;
+  }
+  document.getElementById('slot-error').style.display = 'none';
+  if (!cartCount()) { showToast('Your cart is empty!'); return; }
+  const name = firstName + ' ' + lastName;
+  currentOrder = {
+    id: Date.now(), name, phone, slot: selectedSlot,
+    notes: '',
+    items: JSON.parse(JSON.stringify(cart)),
+    total: cartTotal(), status:'pending',
+    time: new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})
+  };
+  document.getElementById('payAmount').textContent = '$'+currentOrder.total;
+  document.getElementById('orderFormSection').style.display = 'none';
+  document.getElementById('paySection').style.display = 'block';
+  // reset Zelle card
+  document.getElementById('zelleIcon').textContent = '📋';
+  document.getElementById('zelleCard').style.borderColor = '#6D1ED4';
+  document.getElementById('zelleCopiedMsg').style.display = 'none';
+  window.scrollTo(0,0);
+}
+function handleZellePay() {
+  navigator.clipboard.writeText('747-306-8426').catch(()=>{});
+  document.getElementById('zelleIcon').textContent = '✓';
+  document.getElementById('zelleCard').style.borderColor = '#4a1ea0';
+  document.getElementById('zelleCopiedMsg').style.display = 'block';
+  showToast('📋 Zelle number copied!');
+}
+function confirmOrder() {
+  if (!currentOrder) return;
+  orders.push(currentOrder);
+  localStorage.setItem('mco_orders', JSON.stringify(orders));
+  const items = Object.values(currentOrder.items).map(({name,qty,price,sweetness,ice}) =>
+    `<div class="confirm-row"><span>${qty}× ${name}<br><small style="color:var(--text-soft)">${sweetness} · ${ice}</small></span><strong>$${qty*price}</strong></div>`
+  ).join('');
+  document.getElementById('confirmDetails').innerHTML = `${items}
+    <div class="confirm-row"><span>Total</span><strong style="color:var(--green-dark)">$${currentOrder.total}</strong></div>
+    <div class="confirm-row"><span>Pickup</span><strong>${currentOrder.slot}</strong></div>
+    <div class="confirm-row"><span>Name</span><strong>${currentOrder.name}</strong></div>`;
+  cart = {};
+  document.querySelectorAll('.qty-num').forEach(el => el.textContent = '0');
+  document.getElementById('custFirstName').value = '';
+  document.getElementById('custLastName').value = '';
+  renderCartBar();
+  document.getElementById('orderFormSection').style.display = 'block';
+  document.getElementById('paySection').style.display = 'none';
+  currentOrder = null;
+  showPage('page-confirm');
+}
+function backToMenu() { showPage('page-menu'); }
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+window.addEventListener('load', initSlots);
+</script>
+</body>
+</html>

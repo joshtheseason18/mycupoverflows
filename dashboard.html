@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MCO — Owner</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --green:       #4a6e42;
+  --green-dark:  #2d5c3a;
+  --green-light: #7a9e72;
+  --green-pale:  #d4e8c8;
+  --gold:        #c9a84c;
+  --gold-light:  #e8d48a;
+  --cream:       #f2ece0;
+  --cream-dark:  #e0d8c4;
+  --text:        #2a3828;
+  --text-mid:    #5a6e4e;
+  --text-soft:   #8a9e82;
+  --white:       #fdfaf5;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body { font-family:'Jost',sans-serif; background:var(--cream); color:var(--text); min-height:100vh; }
+
+/* ── LOCK ── */
+#lockScreen { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; background:var(--green-dark); padding:40px 24px; text-align:center; }
+.lock-icon { font-size:52px; margin-bottom:20px; }
+.lock-title { font-family:'DM Serif Display',serif; font-size:32px; color:var(--cream); margin-bottom:6px; }
+.lock-sub { font-size:14px; color:var(--gold-light); margin-bottom:36px; opacity:0.85; }
+.lock-input { width:100%; max-width:320px; background:rgba(255,255,255,0.1); border:1.5px solid rgba(201,168,76,0.4); border-radius:14px; padding:15px 18px; font-family:'Jost',sans-serif; font-size:16px; color:var(--cream); outline:none; text-align:center; letter-spacing:0.15em; margin-bottom:14px; }
+.lock-input::placeholder { color:rgba(255,255,255,0.3); letter-spacing:0.05em; }
+.lock-input:focus { border-color:var(--gold); }
+.lock-btn { width:100%; max-width:320px; background:var(--gold); color:var(--green-dark); border:none; border-radius:14px; padding:16px; font-family:'DM Serif Display',serif; font-size:18px; cursor:pointer; }
+.lock-error { color:#ff8080; font-size:13px; margin-top:10px; min-height:18px; }
+
+/* ── DASHBOARD ── */
+#dashboard { display:none; }
+.hero { background:var(--green-dark); padding:40px 24px 24px; position:relative; overflow:hidden; }
+.hero::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse at 50% -20%, rgba(201,168,76,0.15) 0%, transparent 70%); pointer-events:none; }
+.hero-eyebrow { font-size:10px; letter-spacing:0.4em; color:var(--gold); text-transform:uppercase; margin-bottom:6px; }
+.hero-title { font-family:'DM Serif Display',serif; font-size:26px; color:var(--cream); }
+.hero-sub { font-size:12px; color:var(--gold-light); margin-top:4px; opacity:0.85; }
+.top-bar { display:flex; justify-content:space-between; align-items:center; padding:10px 16px; background:var(--green-dark); border-top:1px solid rgba(255,255,255,0.08); }
+.logout-btn { font-size:12px; color:rgba(255,255,255,0.5); background:none; border:none; cursor:pointer; }
+.sheets-btn { font-size:11px; color:var(--gold); background:none; border:1px solid rgba(201,168,76,0.35); border-radius:8px; padding:5px 12px; cursor:pointer; }
+
+/* ── MAIN TABS ── */
+.main-tabs { display:flex; background:var(--white); border-bottom:2px solid var(--cream-dark); }
+.main-tab { flex:1; padding:14px 8px; text-align:center; font-family:'DM Serif Display',serif; font-size:17px; color:var(--text-soft); cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; transition:all 0.2s; }
+.main-tab.active { color:var(--green-dark); border-bottom-color:var(--green-dark); }
+.tab-badge { display:inline-block; background:var(--gold); color:var(--green-dark); border-radius:20px; font-family:'Jost',sans-serif; font-size:10px; font-weight:700; padding:1px 7px; margin-left:6px; vertical-align:middle; }
+
+.section { max-width:640px; margin:0 auto; padding:20px 16px 48px; }
+
+/* ── STATS ── */
+.stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px; }
+.stat-card { background:var(--white); border-radius:16px; padding:14px 10px; text-align:center; box-shadow:0 2px 10px rgba(42,56,40,0.07); }
+.stat-num { font-family:'DM Serif Display',serif; font-size:26px; color:var(--green-dark); line-height:1; }
+.stat-lbl { font-size:9px; letter-spacing:0.15em; color:var(--text-soft); margin-top:4px; text-transform:uppercase; }
+
+/* ── WALK-IN FAB ── */
+.log-walkin-fab { width:100%; background:var(--gold); color:var(--green-dark); border:none; border-radius:14px; padding:15px; font-family:'DM Serif Display',serif; font-size:18px; cursor:pointer; margin-bottom:20px; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 16px rgba(201,168,76,0.3); }
+
+/* ── SUBCATEGORIES ── */
+.subcat { margin-bottom:28px; }
+.subcat-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.subcat-title { font-family:'DM Serif Display',serif; font-size:17px; color:var(--text); display:flex; align-items:center; gap:8px; }
+.sc-badge { border-radius:20px; font-family:'Jost',sans-serif; font-size:11px; font-weight:700; padding:2px 10px; }
+.sc-blue { background:#e8f0ff; color:#1a3c8c; }
+.sc-gold { background:#fff3cc; color:#8a5e00; }
+.sc-green { background:var(--green-pale); color:var(--green-dark); }
+.subcat-divider { height:1px; background:var(--cream-dark); margin-bottom:12px; }
+
+/* ── ORDER CARDS ── */
+.order-card { background:var(--white); border-radius:16px; padding:14px 16px; margin-bottom:10px; box-shadow:0 2px 10px rgba(42,56,40,0.07); border-left:4px solid var(--cream-dark); }
+.order-card.s-pending   { border-left-color:#e8c46a; }
+.order-card.s-confirmed { border-left-color:#3D95CE; }
+.order-card.s-ready     { border-left-color:var(--green-light); }
+.order-card.s-picked    { border-left-color:var(--cream-dark); opacity:0.5; }
+.order-card.s-walkin    { border-left-color:var(--gold); }
+.order-name { font-family:'DM Serif Display',serif; font-size:16px; color:var(--text); }
+.order-top-row { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:2px; }
+.order-slot { font-size:11px; color:var(--text-soft); margin-bottom:8px; }
+.order-items { font-size:13px; color:var(--text-mid); line-height:1.7; margin-bottom:8px; }
+.order-notes { font-size:12px; color:#8a6020; background:#fff8e8; border-radius:8px; padding:6px 10px; margin-bottom:8px; }
+.order-footer { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+.order-amount { font-weight:700; font-size:14px; color:var(--green-dark); }
+.order-phone  { font-size:11px; color:var(--text-soft); }
+.order-actions { display:flex; gap:6px; flex-wrap:wrap; }
+
+/* type tags */
+.tag { font-size:10px; font-weight:600; padding:2px 8px; border-radius:20px; }
+.tag-walkin   { background:#fff3e0; color:#b85c00; }
+.tag-preorder { background:#e8f0ff; color:#1a3c8c; }
+
+/* ── BUTTONS ── */
+.btn { font-size:12px; font-weight:600; padding:7px 12px; border-radius:10px; border:none; cursor:pointer; font-family:'Jost',sans-serif; white-space:nowrap; transition:opacity 0.15s; }
+.btn:hover { opacity:0.82; }
+.btn-ticket  { background:var(--cream-dark); color:var(--text-mid); font-size:13px; }
+.btn-confirm { background:#3D95CE; color:#fff; }
+.btn-ready   { background:var(--green-dark); color:var(--cream); }
+.btn-picked  { background:var(--cream-dark); color:var(--text-mid); }
+.btn-text    { background:#e8f4ff; color:#1a5c8c; border:1px solid #3D95CE; }
+.btn-delete  { background:#fff0f0; color:#cc3333; border:1px solid #ffaaaa; }
+.btn-small   { font-size:11px; padding:5px 10px; }
+
+.empty-state { text-align:center; padding:24px 12px; color:var(--text-soft); font-size:13px; line-height:1.7; }
+.e-icon { font-size:28px; margin-bottom:6px; }
+
+/* ── OVERLAY + SHEET ── */
+.overlay { position:fixed; inset:0; background:rgba(20,30,20,0.6); z-index:300; display:flex; align-items:flex-end; opacity:0; pointer-events:none; transition:opacity 0.25s; }
+.overlay.open { opacity:1; pointer-events:all; }
+.sheet { background:var(--white); border-radius:28px 28px 0 0; width:100%; max-width:640px; margin:0 auto; padding:26px 20px 44px; transform:translateY(100%); transition:transform 0.3s cubic-bezier(0.34,1.2,0.64,1); max-height:92vh; overflow-y:auto; }
+.overlay.open .sheet { transform:translateY(0); }
+.sheet-handle { width:40px; height:4px; border-radius:2px; background:var(--cream-dark); margin:0 auto 18px; }
+.sheet-title { font-family:'DM Serif Display',serif; font-size:22px; color:var(--text); margin-bottom:4px; }
+.sheet-sub { font-size:13px; color:var(--text-soft); margin-bottom:16px; }
+
+/* name row */
+.name-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
+.name-lbl { display:block; font-size:11px; letter-spacing:0.12em; color:var(--text-soft); text-transform:uppercase; margin-bottom:6px; }
+.name-input { width:100%; background:var(--cream); border:1.5px solid var(--cream-dark); border-radius:12px; padding:11px 14px; font-family:'Jost',sans-serif; font-size:15px; color:var(--text); outline:none; }
+.name-input:focus { border-color:var(--green-dark); }
+
+/* walkin items */
+.wi-item { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:var(--cream); border-radius:12px; margin-bottom:7px; }
+.wi-item-name { font-size:13px; font-weight:500; color:var(--text); }
+.wi-item-price { font-size:11px; color:var(--text-soft); margin-top:2px; }
+.wi-qty { display:flex; align-items:center; gap:10px; }
+.wqb { width:28px; height:28px; border-radius:50%; border:none; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.wqb.minus { background:var(--cream-dark); color:var(--text-mid); }
+.wqb.plus  { background:var(--green-dark); color:var(--cream); }
+.wqn { font-weight:600; font-size:14px; min-width:14px; text-align:center; }
+.wi-total-row { display:flex; justify-content:space-between; align-items:center; padding:12px 0 0; border-top:1px solid var(--cream-dark); margin-top:8px; font-size:16px; font-weight:600; color:var(--green-dark); }
+.wi-log-btn { width:100%; background:var(--green-dark); color:var(--cream); border:none; border-radius:14px; padding:15px; font-family:'DM Serif Display',serif; font-size:18px; cursor:pointer; margin-top:14px; }
+.wi-log-btn:disabled { opacity:0.35; cursor:not-allowed; }
+
+/* ── TICKET ── */
+.ticket-overlay { position:fixed; inset:0; background:var(--green-dark); z-index:500; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:32px 24px; opacity:0; pointer-events:none; transition:opacity 0.25s; }
+.ticket-overlay.open { opacity:1; pointer-events:all; }
+.ticket-card { background:var(--cream); border-radius:24px; width:100%; max-width:400px; padding:34px 28px; text-align:center; box-shadow:0 24px 60px rgba(0,0,0,0.4); }
+.ticket-eyebrow { font-size:10px; letter-spacing:0.4em; color:var(--text-soft); text-transform:uppercase; margin-bottom:10px; }
+.ticket-name { font-family:'DM Serif Display',serif; font-size:34px; color:var(--text); margin-bottom:4px; }
+.ticket-slot { font-size:13px; color:var(--text-soft); margin-bottom:20px; }
+.ticket-divider { height:1px; background:var(--cream-dark); margin:0 -28px 20px; }
+.ticket-item { display:flex; align-items:flex-start; gap:12px; margin-bottom:14px; text-align:left; }
+.ticket-qty { font-family:'DM Serif Display',serif; font-size:30px; color:var(--green-dark); line-height:1; min-width:34px; }
+.ticket-item-name { font-family:'DM Serif Display',serif; font-size:17px; color:var(--text); margin-bottom:3px; line-height:1.2; }
+.ticket-item-mods { font-size:12px; color:var(--text-soft); }
+.ticket-notes { background:#fff8e8; border-radius:10px; padding:10px 14px; font-size:12px; color:#8a6020; text-align:left; margin-top:6px; }
+.ticket-action-row { display:flex; gap:10px; margin-top:14px; width:100%; max-width:400px; }
+.ticket-action { flex:1; border:none; border-radius:14px; padding:13px; font-family:'DM Serif Display',serif; font-size:15px; cursor:pointer; }
+.ta-confirm { background:var(--gold); color:var(--green-dark); }
+.ta-ready   { background:var(--green-light); color:#fff; }
+.ta-picked  { background:var(--cream-dark); color:var(--text-mid); }
+.ticket-close { margin-top:14px; background:rgba(255,255,255,0.13); color:var(--cream); border:1.5px solid rgba(255,255,255,0.22); border-radius:14px; padding:12px 28px; font-family:'DM Serif Display',serif; font-size:16px; cursor:pointer; width:100%; max-width:400px; }
+
+/* ── SHEETS CONFIG ── */
+.config-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:400; display:flex; align-items:center; justify-content:center; padding:24px; opacity:0; pointer-events:none; transition:opacity 0.2s; }
+.config-overlay.open { opacity:1; pointer-events:all; }
+.config-box { background:var(--white); border-radius:20px; padding:28px 24px; width:100%; max-width:480px; }
+.config-title { font-family:'DM Serif Display',serif; font-size:22px; color:var(--text); margin-bottom:6px; }
+.config-sub { font-size:12px; color:var(--text-soft); margin-bottom:18px; line-height:1.7; }
+.config-input { width:100%; background:var(--cream); border:1.5px solid var(--cream-dark); border-radius:12px; padding:12px 14px; font-family:'Jost',sans-serif; font-size:13px; color:var(--text); outline:none; margin-bottom:12px; }
+.config-input:focus { border-color:var(--green-dark); }
+.config-save { width:100%; background:var(--green-dark); color:var(--cream); border:none; border-radius:12px; padding:14px; font-family:'DM Serif Display',serif; font-size:17px; cursor:pointer; }
+.config-cancel { width:100%; background:none; border:none; color:var(--text-soft); font-size:13px; cursor:pointer; margin-top:10px; }
+
+/* ── TOAST ── */
+.toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--green-dark); color:var(--cream); border-radius:30px; padding:12px 22px; font-size:14px; font-weight:500; opacity:0; transition:all 0.3s; z-index:600; white-space:nowrap; pointer-events:none; }
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- ══ LOCK ══ -->
+<div id="lockScreen">
+  <div class="lock-icon">🔐</div>
+  <div class="lock-title">Owner Access</div>
+  <div class="lock-sub">My Cup Overflows · Dashboard</div>
+  <input type="password" class="lock-input" id="passInput" placeholder="Enter password" onkeydown="if(event.key==='Enter')tryLogin()"/>
+  <button class="lock-btn" onclick="tryLogin()">Enter →</button>
+  <div class="lock-error" id="lockError"></div>
+</div>
+
+<!-- ══ DASHBOARD ══ -->
+<div id="dashboard">
+  <div class="hero">
+    <div class="hero-eyebrow">Owner Dashboard</div>
+    <div class="hero-title">My Cup Overflows 🍵</div>
+    <div class="hero-sub">Sunday, April 5 · Cross Culture Church</div>
+  </div>
+  <div class="top-bar">
+    <button class="logout-btn" onclick="logout()">← Log out</button>
+    <button class="sheets-btn" onclick="openConfig()">📊 Google Sheets</button>
+  </div>
+
+  <!-- Main tabs -->
+  <div class="main-tabs">
+    <div class="main-tab active" id="tab-walkin" onclick="switchTab('walkin')">
+      Walk-ins <span class="tab-badge" id="badge-walkin">0</span>
+    </div>
+    <div class="main-tab" id="tab-preorder" onclick="switchTab('preorder')">
+      Pre-Orders <span class="tab-badge" id="badge-preorder">0</span>
+    </div>
+  </div>
+
+  <!-- ══ WALK-IN PANEL ══ -->
+  <div id="panel-walkin" class="section">
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num" id="wi-count">0</div><div class="stat-lbl">Walk-ins</div></div>
+      <div class="stat-card"><div class="stat-num" id="wi-revenue">$0</div><div class="stat-lbl">Revenue</div></div>
+      <div class="stat-card"><div class="stat-num" id="wi-drinks">0</div><div class="stat-lbl">Drinks Made</div></div>
+    </div>
+    <button class="log-walkin-fab" onclick="openWalkin()">＋ Log Walk-in Sale</button>
+    <div id="walkin-list"></div>
+  </div>
+
+  <!-- ══ PRE-ORDER PANEL ══ -->
+  <div id="panel-preorder" class="section" style="display:none;">
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num" id="po-received">0</div><div class="stat-lbl">Received</div></div>
+      <div class="stat-card"><div class="stat-num" id="po-confirmed">0</div><div class="stat-lbl">Confirmed</div></div>
+      <div class="stat-card"><div class="stat-num" id="po-ready">0</div><div class="stat-lbl">Ready</div></div>
+    </div>
+
+    <!-- Subcategory 1: Orders Received -->
+    <div class="subcat">
+      <div class="subcat-header">
+        <div class="subcat-title">📥 Orders Received <span class="sc-badge sc-blue" id="sc-received">0</span></div>
+      </div>
+      <div class="subcat-divider"></div>
+      <div id="list-received"></div>
+    </div>
+
+    <!-- Subcategory 2: Payment Confirmed -->
+    <div class="subcat">
+      <div class="subcat-header">
+        <div class="subcat-title">✅ Payment Confirmed <span class="sc-badge sc-gold" id="sc-confirmed">0</span></div>
+      </div>
+      <div class="subcat-divider"></div>
+      <div id="list-confirmed"></div>
+    </div>
+
+    <!-- Subcategory 3: Ready for Pickup -->
+    <div class="subcat">
+      <div class="subcat-header">
+        <div class="subcat-title">🔔 Ready for Pickup <span class="sc-badge sc-green" id="sc-ready">0</span></div>
+        <button class="btn btn-small btn-picked" onclick="clearPickedUp()">Clear Picked Up</button>
+      </div>
+      <div class="subcat-divider"></div>
+      <div id="list-ready"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ WALK-IN MODAL ══ -->
+<div class="overlay" id="walkinOverlay" onclick="closeOutside(event,'walkinOverlay')">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Log Walk-in Sale</div>
+    <div class="sheet-sub">Enter their name, then tap + for each drink</div>
+    <span class="name-lbl">Customer Name *</span>
+    <div class="name-row">
+      <input class="name-input" id="wi-first" placeholder="First name"/>
+      <input class="name-input" id="wi-last"  placeholder="Last name"/>
+    </div>
+    <div id="walkinItems"></div>
+    <div class="wi-total-row"><span>Total</span><span id="walkinTotal">$0</span></div>
+    <button class="wi-log-btn" id="walkinLogBtn" onclick="logWalkin()" disabled>Record Sale →</button>
+  </div>
+</div>
+
+<!-- ══ TICKET OVERLAY ══ -->
+<div class="ticket-overlay" id="ticketOverlay">
+  <div class="ticket-card" id="ticketCard"></div>
+  <div class="ticket-action-row" id="ticketActionRow"></div>
+  <button class="ticket-close" onclick="closeTicket()">✕ Close</button>
+</div>
+
+<!-- ══ GOOGLE SHEETS CONFIG ══ -->
+<div class="config-overlay" id="configOverlay" onclick="closeOutside(event,'configOverlay')">
+  <div class="config-box">
+    <div class="config-title">📊 Google Sheets Setup</div>
+    <div class="config-sub">
+      Paste your Google Apps Script Web App URL here to automatically log every order.<br/><br/>
+      <strong>How to set up (3 min):</strong><br/>
+      1. Open a Google Sheet → Extensions → Apps Script<br/>
+      2. Delete existing code, paste the MCO script (see below)<br/>
+      3. Click Deploy → New Deployment → Web App<br/>
+      4. Set "Who has access" to <strong>Anyone</strong><br/>
+      5. Copy the Web App URL and paste it below
+    </div>
+    <input class="config-input" id="sheetsUrl" placeholder="https://script.google.com/macros/s/..."/>
+    <button class="config-save" onclick="saveConfig()">Save & Connect</button>
+    <button class="config-cancel" onclick="closeConfig()">Cancel</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const PASSWORD = 'psalm23';
+let orders = [];
+let walkinCart = {};
+let sheetsUrl = localStorage.getItem('mco_sheets_url') || '';
+
+const MENU = [
+  { name:'#1 Matcha Latte (Oat Milk)',              price:6 },
+  { name:'#2 Mango Matcha Latte (Oat Milk)',        price:6 },
+  { name:'#3 Coconut Matcha (Dairy Free)',           price:6 },
+  { name:'#4 Matcha Latte (Whole Milk)',             price:6 },
+  { name:'#5 Mango Matcha Latte (Whole Milk)',      price:6 },
+  { name:'#6 Matcha w/ Vanilla Cold Foam',          price:7 },
+  { name:'#7 Matcha w/ Matcha Cold Foam',           price:7 },
+  { name:'#8 Matcha w/ Banana Cold Foam',           price:7 },
+  { name:'#9 Coconut Water w/ Matcha Cold Foam',    price:7 },
+];
+
+// ── AUTH ──
+function tryLogin() {
+  if (document.getElementById('passInput').value === PASSWORD) {
+    document.getElementById('lockScreen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    loadDashboard();
+  } else {
+    document.getElementById('lockError').textContent = 'Incorrect password. Try again.';
+    document.getElementById('passInput').value = '';
+    document.getElementById('passInput').focus();
+  }
+}
+function logout() {
+  clearInterval(window._refresh);
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('lockScreen').style.display = 'flex';
+  document.getElementById('passInput').value = '';
+  document.getElementById('lockError').textContent = '';
+}
+
+// ── LOAD ──
+function loadDashboard() {
+  orders = JSON.parse(localStorage.getItem('mco_orders') || '[]');
+  renderAll();
+  clearInterval(window._refresh);
+  window._refresh = setInterval(() => {
+    orders = JSON.parse(localStorage.getItem('mco_orders') || '[]');
+    renderAll();
+  }, 12000);
+}
+function save() { localStorage.setItem('mco_orders', JSON.stringify(orders)); }
+
+// ── TABS ──
+function switchTab(tab) {
+  document.getElementById('panel-walkin').style.display   = tab === 'walkin'   ? 'block' : 'none';
+  document.getElementById('panel-preorder').style.display = tab === 'preorder' ? 'block' : 'none';
+  document.getElementById('tab-walkin').classList.toggle('active',   tab === 'walkin');
+  document.getElementById('tab-preorder').classList.toggle('active', tab === 'preorder');
+}
+
+// ── RENDER ALL ──
+function renderAll() {
+  renderWalkins();
+  renderPreorders();
+  // tab badges
+  const walkins   = orders.filter(o => o.walkin);
+  const actionable = orders.filter(o => !o.walkin && (o.status === 'pending' || o.status === 'confirmed'));
+  document.getElementById('badge-walkin').textContent   = walkins.length;
+  document.getElementById('badge-preorder').textContent = actionable.length;
+}
+
+// ── WALK-INS ──
+function renderWalkins() {
+  const list = orders.filter(o => o.walkin).reverse();
+  const revenue = list.reduce((s,o)=>s+o.total,0);
+  const drinks  = list.reduce((s,o)=>s+Object.values(o.items).reduce((a,v)=>a+v.qty,0),0);
+  document.getElementById('wi-count').textContent   = list.length;
+  document.getElementById('wi-revenue').textContent = '$'+revenue;
+  document.getElementById('wi-drinks').textContent  = drinks;
+
+  const el = document.getElementById('walkin-list');
+  if (!list.length) { el.innerHTML = `<div class="empty-state"><div class="e-icon">🚶</div>No walk-ins yet. Tap above to log one.</div>`; return; }
+  el.innerHTML = '';
+  list.forEach(o => {
+    const itemsHtml = Object.values(o.items).map(({name,qty})=>`${qty}× ${name}`).join('<br>');
+    const card = document.createElement('div');
+    card.className = 'order-card s-walkin';
+    card.innerHTML = `
+      <div class="order-top-row">
+        <div class="order-name">${o.name}</div>
+        <span class="tag tag-walkin">Walk-in</span>
+      </div>
+      <div class="order-slot">${o.time}</div>
+      <div class="order-items">${itemsHtml}</div>
+      <div class="order-footer">
+        <div class="order-amount">$${o.total}</div>
+        <div class="order-actions">
+          <button class="btn btn-ticket" onclick="openTicket(${o.id})">🎫 Ticket</button>
+          <button class="btn btn-delete" onclick="deleteOrder(${o.id})">🗑</button>
+        </div>
+      </div>`;
+    el.appendChild(card);
+  });
+}
+
+// ── PRE-ORDERS ──
+function renderPreorders() {
+  const all       = orders.filter(o => !o.walkin);
+  const received  = all.filter(o => o.status === 'pending').reverse();
+  const confirmed = all.filter(o => o.status === 'confirmed').reverse();
+  const ready     = all.filter(o => o.status === 'ready' || o.status === 'picked').reverse();
+
+  document.getElementById('po-received').textContent  = received.length;
+  document.getElementById('po-confirmed').textContent = confirmed.length;
+  document.getElementById('po-ready').textContent     = ready.filter(o=>o.status==='ready').length;
+  document.getElementById('sc-received').textContent  = received.length;
+  document.getElementById('sc-confirmed').textContent = confirmed.length;
+  document.getElementById('sc-ready').textContent     = ready.length;
+
+  fillSubcat('list-received',  received,  'pending',   '📭', 'No orders received yet.');
+  fillSubcat('list-confirmed', confirmed, 'confirmed', '💳', 'No payments confirmed yet.');
+  fillSubcat('list-ready',     ready,     'ready',     '🟢', 'No orders ready yet.');
+}
+
+function fillSubcat(listId, items, type, icon, emptyMsg) {
+  const el = document.getElementById(listId);
+  if (!items.length) { el.innerHTML = `<div class="empty-state" style="padding:16px 12px;"><div class="e-icon" style="font-size:24px;">${icon}</div>${emptyMsg}</div>`; return; }
+  el.innerHTML = '';
+  items.forEach(o => {
+    const itemsHtml = Object.values(o.items).map(({name,qty,sweetness,ice})=>
+      `${qty}× ${name} <span style="opacity:0.6;font-size:11px;">(${sweetness}, ${ice})</span>`
+    ).join('<br>');
+
+    let actions = '';
+    if (o.status === 'pending')   actions = `<button class="btn btn-confirm" onclick="confirmPayment(${o.id})">✅ Confirm Payment</button>`;
+    if (o.status === 'confirmed') actions = `<button class="btn btn-ready"   onclick="markReady(${o.id})">🔔 Notify Ready</button>`;
+    if (o.status === 'ready')     actions = `<button class="btn btn-picked"  onclick="markPickedUp(${o.id})">Picked Up ✓</button>`;
+
+    const smsBtn = o.phone && o.status !== 'picked'
+      ? `<button class="btn btn-text" onclick="tapToText(${o.id})">💬</button>` : '';
+
+    const card = document.createElement('div');
+    card.className = `order-card s-${o.status}`;
+    card.innerHTML = `
+      <div class="order-top-row">
+        <div class="order-name">${o.name}</div>
+        <span class="tag tag-preorder">Pre-Order</span>
+      </div>
+      <div class="order-slot">📍 ${o.slot} · placed ${o.time}</div>
+      <div class="order-items">${itemsHtml}</div>
+      ${o.notes ? `<div class="order-notes">📝 ${o.notes}</div>` : ''}
+      <div class="order-footer">
+        <div>
+          <div class="order-amount">$${o.total}</div>
+          <div class="order-phone">${o.phone}</div>
+        </div>
+        <div class="order-actions">
+          <button class="btn btn-ticket" onclick="openTicket(${o.id})">🎫</button>
+          ${smsBtn}${actions}
+        </div>
+      </div>`;
+    el.appendChild(card);
+  });
+}
+
+// ── ACTIONS ──
+function confirmPayment(id) {
+  const idx = orders.findIndex(o=>o.id===id); if (idx===-1) return;
+  orders[idx].status = 'confirmed';
+  save(); renderAll();
+  logToSheets(orders[idx]);
+  const o = orders[idx], name = o.name.split(' ')[0];
+  const msg = encodeURIComponent(`Hey ${name}! 🍵 We received your payment — we'll text you when your order is ready for pickup. See you Sunday!`);
+  window.location.href = `sms:${o.phone}?&body=${msg}`;
+  showToast('✅ Payment confirmed!');
+}
+
+function markReady(id) {
+  const idx = orders.findIndex(o=>o.id===id); if (idx===-1) return;
+  orders[idx].status = 'ready';
+  save(); renderAll();
+  const o = orders[idx], name = o.name.split(' ')[0];
+  const msg = encodeURIComponent(`Hey ${name}! ✅ Your matcha order is ready for pickup! Come grab it 🍵`);
+  window.location.href = `sms:${o.phone}?&body=${msg}`;
+  showToast('🔔 Customer notified — order ready!');
+}
+
+function markPickedUp(id) {
+  const idx = orders.findIndex(o=>o.id===id); if (idx===-1) return;
+  orders[idx].status = 'picked';
+  save(); renderAll();
+  showToast('✓ Picked up!');
+}
+
+function clearPickedUp() {
+  orders = orders.filter(o => !(o.status==='picked' && !o.walkin));
+  save(); renderAll();
+  showToast('Cleared picked-up orders');
+}
+
+function tapToText(id) {
+  const o = orders.find(o=>o.id===id); if (!o) return;
+  const name = o.name.split(' ')[0];
+  const msgs = {
+    pending:   `Hey ${name}! 🍵 We got your order — please send $${o.total} via Venmo @Josh-Sison-1 or Zelle 747-306-8426 to confirm!`,
+    confirmed: `Hey ${name}! 🍵 Your order is being prepared — we'll text you when it's ready!`,
+    ready:     `Hey ${name}! ✅ Your matcha is ready for pickup! Come grab it 🍵`
+  };
+  window.location.href = `sms:${o.phone}?&body=${encodeURIComponent(msgs[o.status]||'')}`;
+}
+
+function deleteOrder(id) {
+  if (!confirm('Delete this walk-in? Cannot be undone.')) return;
+  orders = orders.filter(o=>o.id!==id);
+  save(); renderAll();
+  showToast('🗑 Deleted');
+}
+
+// ── WALK-IN MODAL ──
+function openWalkin() {
+  walkinCart = {};
+  document.getElementById('wi-first').value = '';
+  document.getElementById('wi-last').value = '';
+  buildWalkinItems();
+  document.getElementById('walkinOverlay').classList.add('open');
+}
+
+function buildWalkinItems() {
+  const c = document.getElementById('walkinItems');
+  c.innerHTML = '';
+  MENU.forEach(item => {
+    const k = item.name.replace(/[^a-z0-9]/gi,'_');
+    const div = document.createElement('div');
+    div.className = 'wi-item';
+    div.innerHTML = `
+      <div>
+        <div class="wi-item-name">${item.name}</div>
+        <div class="wi-item-price">$${item.price}</div>
+      </div>
+      <div class="wi-qty">
+        <button class="wqb minus" onclick="wiUpdate('${item.name}',${item.price},-1,'${k}')">−</button>
+        <span class="wqn" id="wq-${k}">0</span>
+        <button class="wqb plus"  onclick="wiUpdate('${item.name}',${item.price},1,'${k}')">+</button>
+      </div>`;
+    c.appendChild(div);
+  });
+  updateWiTotal();
+}
+
+function wiUpdate(name, price, delta, key) {
+  walkinCart[name] = Math.max(0, (walkinCart[name]||0)+delta);
+  if (!walkinCart[name]) delete walkinCart[name];
+  const el = document.getElementById('wq-'+key);
+  if (el) el.textContent = walkinCart[name]||0;
+  updateWiTotal();
+}
+
+function updateWiTotal() {
+  const total = Object.entries(walkinCart).reduce((s,[n,q])=>{
+    const it = MENU.find(m=>m.name===n); return s+(it?it.price*q:0);
+  },0);
+  document.getElementById('walkinTotal').textContent = '$'+total;
+  document.getElementById('walkinLogBtn').disabled = total===0;
+}
+
+function logWalkin() {
+  const first = document.getElementById('wi-first').value.trim();
+  const last  = document.getElementById('wi-last').value.trim();
+  if (!first||!last) { showToast("Please enter the customer's name"); return; }
+  const total = Object.entries(walkinCart).reduce((s,[n,q])=>{
+    const it=MENU.find(m=>m.name===n); return s+(it?it.price*q:0);
+  },0);
+  if (!total) return;
+  const items = {};
+  Object.entries(walkinCart).forEach(([name,qty])=>{
+    const it=MENU.find(m=>m.name===name);
+    items[name]={name,qty,price:it.price,sweetness:'Regular',ice:'Regular Ice'};
+  });
+  const sale = { id:Date.now(), name:first+' '+last, phone:'—', slot:'Walk-in', notes:'', items, total, status:'picked', time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), walkin:true };
+  orders.push(sale);
+  save(); logToSheets(sale); renderAll();
+  document.getElementById('walkinOverlay').classList.remove('open');
+  showToast(`✅ Walk-in logged — ${first} · $${total}`);
+}
+
+// ── TICKET ──
+function openTicket(id) {
+  const o = orders.find(o=>o.id===id); if (!o) return;
+  const firstName = o.name.split(' ')[0];
+  const itemsHtml = Object.values(o.items).map(({name,qty,sweetness,ice})=>`
+    <div class="ticket-item">
+      <div class="ticket-qty">${qty}</div>
+      <div>
+        <div class="ticket-item-name">${name}</div>
+        <div class="ticket-item-mods">${sweetness} · ${ice}</div>
+      </div>
+    </div>`).join('');
+  document.getElementById('ticketCard').innerHTML = `
+    <div class="ticket-eyebrow">${o.walkin?'Walk-in':'Pre-Order'} · ${o.slot}</div>
+    <div class="ticket-name">${firstName}</div>
+    <div class="ticket-slot">${o.name} · $${o.total}</div>
+    <div class="ticket-divider"></div>
+    ${itemsHtml}
+    ${o.notes?`<div class="ticket-notes">📝 ${o.notes}</div>`:''}`;
+  const row = document.getElementById('ticketActionRow');
+  if (o.status==='pending')   row.innerHTML=`<button class="ticket-action ta-confirm" onclick="confirmPayment(${id});closeTicket()">✅ Confirm Payment</button>`;
+  else if (o.status==='confirmed') row.innerHTML=`<button class="ticket-action ta-ready" onclick="markReady(${id});closeTicket()">🔔 Notify Ready</button>`;
+  else if (o.status==='ready')     row.innerHTML=`<button class="ticket-action ta-picked" onclick="markPickedUp(${id});closeTicket()">Picked Up ✓</button>`;
+  else row.innerHTML='';
+  document.getElementById('ticketOverlay').classList.add('open');
+}
+function closeTicket() { document.getElementById('ticketOverlay').classList.remove('open'); }
+
+// ── GOOGLE SHEETS ──
+function openConfig()  { document.getElementById('sheetsUrl').value=sheetsUrl; document.getElementById('configOverlay').classList.add('open'); }
+function closeConfig() { document.getElementById('configOverlay').classList.remove('open'); }
+function saveConfig()  { sheetsUrl=document.getElementById('sheetsUrl').value.trim(); localStorage.setItem('mco_sheets_url',sheetsUrl); closeConfig(); showToast('📊 Sheets connected!'); }
+
+function logToSheets(order) {
+  if (!sheetsUrl) return;
+  const items = Object.values(order.items).map(({name,qty})=>`${qty}x ${name}`).join(', ');
+  fetch(sheetsUrl, {
+    method:'POST', mode:'no-cors',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({ timestamp:new Date().toLocaleString(), type:order.walkin?'Walk-in':'Pre-Order', name:order.name, phone:order.phone, items, total:order.total, slot:order.slot, notes:order.notes||'', status:order.status })
+  }).catch(()=>{});
+}
+
+// ── HELPERS ──
+function closeOutside(e, id) { if (e.target===document.getElementById(id)) document.getElementById(id).classList.remove('open'); }
+function showToast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2800); }
+window.addEventListener('load', ()=>document.getElementById('passInput').focus());
+</script>
+</body>
+</html>
