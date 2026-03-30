@@ -616,14 +616,55 @@ function renderAllSales() {
   }
 }
 
+function parseItemNumber(itemStr) {
+  const match = itemStr.match(/^(#\d+)/);
+  return match ? match[1] : '';
+}
+function parseItemName(itemStr) {
+  // Remove leading "#N " and trailing sweetness "(X)"
+  return itemStr.replace(/^#\d+\s*[-–]?\s*/, '').replace(/\s*\([^)]+\)\s*$/, '').trim();
+}
+function parseItemSweetness(itemStr) {
+  const match = itemStr.match(/\(([^)]+)\)\s*$/);
+  return match ? match[1] : '';
+}
+function parseItemQty(itemStr) {
+  const match = itemStr.match(/^(\d+)x\s*/);
+  return match ? match[1] : '1';
+}
+function parseItemBody(itemStr) {
+  // Strip leading qty "Nx "
+  return itemStr.replace(/^\d+x\s*/, '');
+}
+
+function buildItemsHtml(itemsString) {
+  return (itemsString||'').split(',').map(raw => {
+    const item = raw.trim();
+    const qty        = parseItemQty(item);
+    const body       = parseItemBody(item);
+    const num        = parseItemNumber(body);
+    const name       = parseItemName(body);
+    const sweetness  = parseItemSweetness(body);
+    return `
+      <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--cream-dark);">
+        <div style="font-family:'DM Serif Display',serif;font-size:28px;color:var(--green-dark);line-height:1;min-width:44px;font-weight:700;">${num}</div>
+        <div style="flex:1;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-weight:700;font-size:13px;color:var(--text);">${qty}×</span>
+            <span style="font-size:13px;color:var(--text);">${name}</span>
+          </div>
+          ${sweetness ? `<div style="font-size:11px;color:var(--text-soft);margin-top:2px;">${sweetness}</div>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
 function fillSubcat(listId, items, type, icon, emptyMsg) {
   const el = document.getElementById(listId);
   if (!items.length) { el.innerHTML = `<div class="empty-state" style="padding:16px 12px;"><div class="e-icon" style="font-size:24px;">${icon}</div>${emptyMsg}</div>`; return; }
   el.innerHTML = '';
   items.forEach(o => {
-    const itemsHtml = (o.items||'').split(',').map(i=>
-      `<div>${i.trim()}</div>`
-    ).join('');
+    const itemsHtml = buildItemsHtml(o.items);
 
     let actions = '';
     if (o.status === 'pending')   actions = `<button class="btn btn-confirm" onclick="confirmPayment(${o.id})">✅ Confirm Payment</button>`;
@@ -641,9 +682,9 @@ function fillSubcat(listId, items, type, icon, emptyMsg) {
         <span class="tag tag-preorder">Pre-Order</span>
       </div>
       <div class="order-slot">📍 ${o.slot} · placed ${o.time}</div>
-      <div class="order-items">${itemsHtml}</div>
+      <div style="margin:8px 0 4px;">${itemsHtml}</div>
       ${o.notes ? `<div class="order-notes">📝 ${o.notes}</div>` : ''}
-      <div class="order-footer">
+      <div class="order-footer" style="margin-top:10px;">
         <div>
           <div class="order-amount">$${o.total}</div>
           <div class="order-phone">${o.phone}</div>
