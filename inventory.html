@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MCO — Inventory</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📦</text></svg>"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --green:       #4a6e42;
+  --green-dark:  #2d5c3a;
+  --green-light: #7a9e72;
+  --green-pale:  #d4e8c8;
+  --gold:        #c9a84c;
+  --gold-light:  #e8d48a;
+  --cream:       #f2ece0;
+  --cream-dark:  #e0d8c4;
+  --text:        #2a3828;
+  --text-mid:    #5a6e4e;
+  --text-soft:   #8a9e82;
+  --white:       #fdfaf5;
+  --red:         #cc3333;
+  --red-pale:    #fff0f0;
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:'Jost',sans-serif; background:var(--cream); color:var(--text); min-height:100vh; }
+
+/* ── LOCK ── */
+#lockScreen { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; background:var(--green-dark); padding:40px 24px; text-align:center; }
+.lock-icon  { font-size:52px; margin-bottom:20px; }
+.lock-title { font-family:'DM Serif Display',serif; font-size:32px; color:var(--cream); margin-bottom:6px; }
+.lock-sub   { font-size:14px; color:var(--gold-light); margin-bottom:36px; opacity:0.85; }
+.lock-input { width:100%; max-width:320px; background:rgba(255,255,255,0.1); border:1.5px solid rgba(201,168,76,0.4); border-radius:14px; padding:15px 18px; font-family:'Jost',sans-serif; font-size:16px; color:var(--cream); outline:none; text-align:center; letter-spacing:0.15em; margin-bottom:14px; }
+.lock-input::placeholder { color:rgba(255,255,255,0.3); }
+.lock-input:focus { border-color:var(--gold); }
+.lock-btn   { width:100%; max-width:320px; background:var(--gold); color:var(--green-dark); border:none; border-radius:14px; padding:16px; font-family:'DM Serif Display',serif; font-size:18px; cursor:pointer; }
+.lock-error { color:#ff8080; font-size:13px; margin-top:10px; min-height:18px; }
+
+/* ── APP ── */
+#app { display:none; }
+
+/* ── HERO ── */
+.hero { background:var(--green-dark); padding:40px 24px 28px; position:relative; overflow:hidden; }
+.hero::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse at 50% -20%, rgba(201,168,76,0.15) 0%, transparent 70%); pointer-events:none; }
+.hero-eyebrow { font-size:10px; letter-spacing:0.4em; color:var(--gold); text-transform:uppercase; margin-bottom:6px; }
+.hero-title   { font-family:'DM Serif Display',serif; font-size:26px; color:var(--cream); margin-bottom:18px; }
+
+/* Profit banner */
+.profit-banner { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; position:relative; z-index:1; }
+.profit-card { background:rgba(255,255,255,0.1); border-radius:14px; padding:14px 12px; text-align:center; border:1px solid rgba(255,255,255,0.08); }
+.profit-label { font-size:9px; letter-spacing:0.2em; color:var(--gold-light); text-transform:uppercase; margin-bottom:6px; }
+.profit-num   { font-family:'DM Serif Display',serif; font-size:24px; color:var(--cream); line-height:1; }
+.profit-num.green  { color:#7ee8a2; }
+.profit-num.red    { color:#ff8080; }
+.profit-num.gold   { color:var(--gold); }
+
+/* ── TOP BAR ── */
+.top-bar { display:flex; justify-content:space-between; align-items:center; padding:10px 16px; background:var(--green-dark); border-top:1px solid rgba(255,255,255,0.08); }
+.logout-btn { font-size:12px; color:rgba(255,255,255,0.5); background:none; border:none; cursor:pointer; }
+.dash-link  { font-size:11px; color:var(--gold); background:none; border:1px solid rgba(201,168,76,0.35); border-radius:8px; padding:5px 12px; cursor:pointer; text-decoration:none; }
+
+/* ── TABS ── */
+.main-tabs { display:flex; background:var(--white); border-bottom:2px solid var(--cream-dark); overflow-x:auto; }
+.main-tab  { flex:1; min-width:80px; padding:13px 8px; text-align:center; font-family:'DM Serif Display',serif; font-size:15px; color:var(--text-soft); cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; transition:all 0.2s; white-space:nowrap; }
+.main-tab.active { color:var(--green-dark); border-bottom-color:var(--green-dark); }
+
+/* ── SECTION ── */
+.section { max-width:640px; margin:0 auto; padding:20px 16px 48px; }
+
+/* ── SUMMARY STATS ── */
+.stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px; }
+.stat-card { background:var(--white); border-radius:16px; padding:14px 10px; text-align:center; box-shadow:0 2px 10px rgba(42,56,40,0.07); }
+.stat-num  { font-family:'DM Serif Display',serif; font-size:24px; color:var(--green-dark); line-height:1; }
+.stat-lbl  { font-size:9px; letter-spacing:0.15em; color:var(--text-soft); margin-top:4px; text-transform:uppercase; }
+
+/* ── ADD ITEM FORM ── */
+.add-form { background:var(--white); border-radius:18px; padding:20px; margin-bottom:20px; box-shadow:0 2px 10px rgba(42,56,40,0.07); }
+.form-title { font-family:'DM Serif Display',serif; font-size:18px; color:var(--text); margin-bottom:14px; }
+.form-row   { display:grid; gap:8px; margin-bottom:8px; }
+.form-row.cols-3 { grid-template-columns:1fr 80px 80px; }
+.form-row.cols-2 { grid-template-columns:1fr 80px; }
+.form-row.cols-1 { grid-template-columns:1fr; }
+.field-lbl  { font-size:10px; letter-spacing:0.15em; color:var(--text-soft); text-transform:uppercase; margin-bottom:4px; }
+.f-input {
+  width:100%; background:var(--cream); border:1.5px solid var(--cream-dark);
+  border-radius:12px; padding:11px 14px; font-family:'Jost',sans-serif;
+  font-size:14px; color:var(--text); outline:none; transition:border-color 0.2s;
+}
+.f-input:focus { border-color:var(--green-dark); }
+.f-input::placeholder { color:var(--text-soft); }
+textarea.f-input { resize:vertical; min-height:72px; }
+.add-btn { width:100%; background:var(--green-dark); color:var(--cream); border:none; border-radius:12px; padding:13px; font-family:'DM Serif Display',serif; font-size:17px; cursor:pointer; margin-top:8px; transition:opacity 0.2s; }
+.add-btn:hover { opacity:0.88; }
+
+/* ── INVENTORY CARDS ── */
+.inv-card { background:var(--white); border-radius:16px; padding:16px; margin-bottom:10px; box-shadow:0 2px 10px rgba(42,56,40,0.07); border-left:4px solid var(--green-light); }
+.inv-card.low  { border-left-color:var(--red); }
+.inv-card.zero { border-left-color:var(--cream-dark); opacity:0.6; }
+
+.inv-top   { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }
+.inv-name  { font-family:'DM Serif Display',serif; font-size:17px; color:var(--text); }
+.inv-cat   { font-size:10px; font-weight:600; padding:2px 8px; border-radius:20px; }
+.cat-ingredient { background:var(--green-pale); color:var(--green-dark); }
+.cat-supplies   { background:#fef3dc; color:#8a6020; }
+.cat-equipment  { background:#e8f0ff; color:#1a3c8c; }
+
+.inv-details { display:flex; gap:16px; flex-wrap:wrap; margin-bottom:10px; }
+.inv-detail  { display:flex; flex-direction:column; }
+.inv-detail-label { font-size:10px; color:var(--text-soft); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:2px; }
+.inv-detail-val   { font-size:14px; font-weight:600; color:var(--text); }
+
+.qty-row   { display:flex; align-items:center; gap:10px; }
+.qty-label { font-size:10px; color:var(--text-soft); letter-spacing:0.1em; text-transform:uppercase; }
+.qty-ctrl  { display:flex; align-items:center; gap:8px; }
+.qbtn      { width:30px; height:30px; border-radius:50%; border:none; cursor:pointer; font-size:17px; display:flex; align-items:center; justify-content:center; transition:background 0.15s; }
+.qbtn.minus { background:var(--cream-dark); color:var(--text-mid); }
+.qbtn.plus  { background:var(--green-dark); color:var(--cream); }
+.qty-val   { font-family:'DM Serif Display',serif; font-size:22px; min-width:36px; text-align:center; }
+.qty-val.low  { color:var(--red); }
+.qty-val.good { color:var(--green-dark); }
+
+.inv-notes { font-size:12px; color:#8a6020; background:#fff8e8; border-radius:8px; padding:8px 12px; margin-top:8px; }
+.inv-footer { display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding-top:10px; border-top:1px solid var(--cream-dark); }
+.inv-value  { font-size:13px; color:var(--text-soft); }
+.inv-value span { font-weight:700; color:var(--green-dark); }
+.low-badge  { font-size:10px; font-weight:700; padding:3px 10px; border-radius:20px; background:var(--red-pale); color:var(--red); }
+.in-stock   { font-size:10px; font-weight:700; padding:3px 10px; border-radius:20px; background:var(--green-pale); color:var(--green-dark); }
+
+.btn-edit   { font-size:11px; font-weight:600; padding:6px 12px; border-radius:10px; background:var(--cream-dark); color:var(--text-mid); border:none; cursor:pointer; }
+.btn-del    { font-size:11px; font-weight:600; padding:6px 12px; border-radius:10px; background:var(--red-pale); color:var(--red); border:1px solid #ffaaaa; cursor:pointer; }
+
+/* ── EDIT MODAL ── */
+.overlay { position:fixed; inset:0; background:rgba(20,30,20,0.6); z-index:300; display:flex; align-items:flex-end; opacity:0; pointer-events:none; transition:opacity 0.25s; }
+.overlay.open { opacity:1; pointer-events:all; }
+.sheet { background:var(--white); border-radius:28px 28px 0 0; width:100%; max-width:640px; margin:0 auto; padding:26px 20px 44px; transform:translateY(100%); transition:transform 0.3s cubic-bezier(0.34,1.2,0.64,1); max-height:92vh; overflow-y:auto; }
+.overlay.open .sheet { transform:translateY(0); }
+.sheet-handle { width:40px; height:4px; border-radius:2px; background:var(--cream-dark); margin:0 auto 18px; }
+.sheet-title  { font-family:'DM Serif Display',serif; font-size:22px; color:var(--text); margin-bottom:16px; }
+
+.save-btn { width:100%; background:var(--green-dark); color:var(--cream); border:none; border-radius:14px; padding:15px; font-family:'DM Serif Display',serif; font-size:18px; cursor:pointer; margin-top:14px; }
+
+/* ── EQUIPMENT NOTES ── */
+.equip-card { background:var(--white); border-radius:16px; padding:16px; margin-bottom:10px; box-shadow:0 2px 10px rgba(42,56,40,0.07); border-left:4px solid #3D95CE; }
+.equip-name { font-family:'DM Serif Display',serif; font-size:16px; color:var(--text); margin-bottom:4px; }
+.equip-note { font-size:13px; color:var(--text-mid); line-height:1.6; }
+
+/* ── EMPTY STATE ── */
+.empty { text-align:center; padding:32px 16px; color:var(--text-soft); font-size:13px; line-height:1.7; }
+.empty .e-icon { font-size:32px; margin-bottom:8px; }
+
+/* ── TOAST ── */
+.toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--green-dark); color:var(--cream); border-radius:30px; padding:12px 22px; font-size:14px; font-weight:500; opacity:0; transition:all 0.3s; z-index:600; white-space:nowrap; pointer-events:none; }
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- ══ LOCK ══ -->
+<div id="lockScreen">
+  <div class="lock-icon">📦</div>
+  <div class="lock-title">Inventory</div>
+  <div class="lock-sub">My Cup Overflows · Private</div>
+  <input type="password" class="lock-input" id="passInput" placeholder="Enter password" onkeydown="if(event.key==='Enter')tryLogin()"/>
+  <button class="lock-btn" onclick="tryLogin()">Enter →</button>
+  <div class="lock-error" id="lockError"></div>
+</div>
+
+<!-- ══ APP ══ -->
+<div id="app">
+  <div class="hero">
+    <div class="hero-eyebrow">My Cup Overflows</div>
+    <div class="hero-title">Inventory Manager 📦</div>
+    <!-- Profit Banner -->
+    <div class="profit-banner">
+      <div class="profit-card">
+        <div class="profit-label">Revenue</div>
+        <div class="profit-num green" id="p-revenue">$0</div>
+      </div>
+      <div class="profit-card">
+        <div class="profit-label">Inv. Cost</div>
+        <div class="profit-num red" id="p-cost">$0</div>
+      </div>
+      <div class="profit-card">
+        <div class="profit-label">Net Profit</div>
+        <div class="profit-num gold" id="p-profit">$0</div>
+      </div>
+    </div>
+  </div>
+  <div class="top-bar">
+    <button class="logout-btn" onclick="logout()">← Log out</button>
+    <a class="dash-link" href="dashboard.html">🖥 Dashboard</a>
+  </div>
+
+  <!-- Tabs -->
+  <div class="main-tabs">
+    <div class="main-tab active" id="tab-ingredients" onclick="switchTab('ingredients')">🌿 Ingredients</div>
+    <div class="main-tab" id="tab-supplies"    onclick="switchTab('supplies')">☕ Supplies</div>
+    <div class="main-tab" id="tab-equipment"   onclick="switchTab('equipment')">🔧 Equipment</div>
+  </div>
+
+  <!-- ══ INGREDIENTS ══ -->
+  <div id="panel-ingredients" class="section">
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num" id="ing-count">0</div><div class="stat-lbl">Items</div></div>
+      <div class="stat-card"><div class="stat-num" id="ing-cost">$0</div><div class="stat-lbl">Total Cost</div></div>
+      <div class="stat-card"><div class="stat-num" id="ing-low">0</div><div class="stat-lbl">⚠️ Low</div></div>
+    </div>
+    <div class="add-form">
+      <div class="form-title">Add Ingredient</div>
+      <div class="form-row cols-3">
+        <div><div class="field-lbl">Name *</div><input class="f-input" id="i-name" placeholder="e.g. Oat Milk"/></div>
+        <div><div class="field-lbl">Cost $</div><input class="f-input" id="i-cost" type="number" min="0" step="0.01" placeholder="4.99"/></div>
+        <div><div class="field-lbl">Qty</div><input class="f-input" id="i-qty" type="number" min="0" placeholder="6"/></div>
+      </div>
+      <div class="form-row cols-2">
+        <div><div class="field-lbl">Unit</div><input class="f-input" id="i-unit" placeholder="cartons, oz, lbs…"/></div>
+        <div><div class="field-lbl">Alert at</div><input class="f-input" id="i-low" type="number" min="0" placeholder="2"/></div>
+      </div>
+      <div class="form-row cols-1">
+        <div><div class="field-lbl">Notes</div><textarea class="f-input" id="i-notes" placeholder="e.g. Buy at Trader Joe's, keep refrigerated, expires soon…" rows="2"></textarea></div>
+      </div>
+      <button class="add-btn" onclick="addItem('ingredient')">+ Add Ingredient</button>
+    </div>
+    <div id="list-ingredients"></div>
+  </div>
+
+  <!-- ══ SUPPLIES ══ -->
+  <div id="panel-supplies" class="section" style="display:none;">
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num" id="sup-count">0</div><div class="stat-lbl">Items</div></div>
+      <div class="stat-card"><div class="stat-num" id="sup-cost">$0</div><div class="stat-lbl">Total Cost</div></div>
+      <div class="stat-card"><div class="stat-num" id="sup-low">0</div><div class="stat-lbl">⚠️ Low</div></div>
+    </div>
+    <div class="add-form">
+      <div class="form-title">Add Supply</div>
+      <div class="form-row cols-3">
+        <div><div class="field-lbl">Name *</div><input class="f-input" id="s-name" placeholder="e.g. 16oz Cups"/></div>
+        <div><div class="field-lbl">Cost $</div><input class="f-input" id="s-cost" type="number" min="0" step="0.01" placeholder="12.99"/></div>
+        <div><div class="field-lbl">Qty</div><input class="f-input" id="s-qty" type="number" min="0" placeholder="100"/></div>
+      </div>
+      <div class="form-row cols-2">
+        <div><div class="field-lbl">Unit</div><input class="f-input" id="s-unit" placeholder="pieces, packs, boxes…"/></div>
+        <div><div class="field-lbl">Alert at</div><input class="f-input" id="s-low" type="number" min="0" placeholder="20"/></div>
+      </div>
+      <div class="form-row cols-1">
+        <div><div class="field-lbl">Notes</div><textarea class="f-input" id="s-notes" placeholder="e.g. Ordered from Amazon, restock link…" rows="2"></textarea></div>
+      </div>
+      <button class="add-btn" onclick="addItem('supply')">+ Add Supply</button>
+    </div>
+    <div id="list-supplies"></div>
+  </div>
+
+  <!-- ══ EQUIPMENT ══ -->
+  <div id="panel-equipment" class="section" style="display:none;">
+    <div class="add-form">
+      <div class="form-title">Add Equipment Note</div>
+      <div class="form-row cols-1">
+        <div><div class="field-lbl">Equipment Name *</div><input class="f-input" id="e-name" placeholder="e.g. Chasen (Bamboo Whisk), Frother, Ice Machine…"/></div>
+      </div>
+      <div class="form-row cols-1">
+        <div><div class="field-lbl">Notes / Status</div><textarea class="f-input" id="e-notes" placeholder="e.g. Bring from home, batteries charged, handle with care, needs cleaning…" rows="3"></textarea></div>
+      </div>
+      <button class="add-btn" onclick="addEquipment()">+ Add Equipment</button>
+    </div>
+    <div id="list-equipment"></div>
+  </div>
+</div>
+
+<!-- ══ EDIT MODAL ══ -->
+<div class="overlay" id="editOverlay" onclick="closeEditOutside(event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Edit Item</div>
+    <div class="form-row cols-1" style="margin-bottom:8px;">
+      <div><div class="field-lbl">Name</div><input class="f-input" id="e-edit-name" /></div>
+    </div>
+    <div class="form-row cols-3" style="margin-bottom:8px;">
+      <div><div class="field-lbl">Cost $</div><input class="f-input" id="e-edit-cost" type="number" min="0" step="0.01"/></div>
+      <div><div class="field-lbl">Qty</div><input class="f-input" id="e-edit-qty"  type="number" min="0"/></div>
+      <div><div class="field-lbl">Alert at</div><input class="f-input" id="e-edit-low" type="number" min="0"/></div>
+    </div>
+    <div class="form-row cols-1" style="margin-bottom:8px;">
+      <div><div class="field-lbl">Unit</div><input class="f-input" id="e-edit-unit"/></div>
+    </div>
+    <div class="form-row cols-1">
+      <div><div class="field-lbl">Notes</div><textarea class="f-input" id="e-edit-notes" rows="3"></textarea></div>
+    </div>
+    <button class="save-btn" onclick="saveEdit()">Save Changes</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const PASSWORD = 'psalm23';
+const SHEETS_URL = localStorage.getItem('mco_sheets_url') || '';
+
+let inventory   = JSON.parse(localStorage.getItem('mco_inv_ingredients') || '[]');
+let supplies    = JSON.parse(localStorage.getItem('mco_inv_supplies')    || '[]');
+let equipment   = JSON.parse(localStorage.getItem('mco_inv_equipment')   || '[]');
+let currentTab  = 'ingredients';
+let editingId   = null;
+let editingType = null;
+
+// ── AUTH ──
+function tryLogin() {
+  if (document.getElementById('passInput').value === PASSWORD) {
+    document.getElementById('lockScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    renderAll();
+  } else {
+    document.getElementById('lockError').textContent = 'Incorrect password. Try again.';
+    document.getElementById('passInput').value = '';
+    document.getElementById('passInput').focus();
+  }
+}
+function logout() {
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('lockScreen').style.display = 'flex';
+  document.getElementById('passInput').value = '';
+  document.getElementById('lockError').textContent = '';
+}
+
+// ── TABS ──
+function switchTab(tab) {
+  currentTab = tab;
+  ['ingredients','supplies','equipment'].forEach(t => {
+    document.getElementById('panel-'+t).style.display = t === tab ? 'block' : 'none';
+    document.getElementById('tab-'+t).classList.toggle('active', t === tab);
+  });
+}
+
+// ── RENDER ALL ──
+function renderAll() {
+  renderProfitBanner();
+  renderIngredients();
+  renderSupplies();
+  renderEquipment();
+}
+
+// ── PROFIT BANNER ──
+function renderProfitBanner() {
+  const orders  = JSON.parse(localStorage.getItem('mco_orders') || '[]');
+  const revenue = orders.reduce((s,o) => s + o.total, 0);
+  const ingCost = inventory.reduce((s,i) => s + (i.cost * i.qty), 0);
+  const supCost = supplies.reduce((s,i)  => s + (i.cost * i.qty), 0);
+  const totalCost = ingCost + supCost;
+  const profit    = revenue - totalCost;
+
+  document.getElementById('p-revenue').textContent = '$' + revenue.toFixed(2);
+  document.getElementById('p-cost').textContent    = '-$' + totalCost.toFixed(2);
+  document.getElementById('p-profit').textContent  = (profit >= 0 ? '+$' : '-$') + Math.abs(profit).toFixed(2);
+  document.getElementById('p-profit').className    = 'profit-num ' + (profit >= 0 ? 'green' : 'red');
+}
+
+// ── ADD ITEM ──
+function addItem(type) {
+  const pre = type === 'ingredient' ? 'i' : 's';
+  const name  = document.getElementById(`${pre}-name`).value.trim();
+  const cost  = parseFloat(document.getElementById(`${pre}-cost`).value) || 0;
+  const qty   = parseInt(document.getElementById(`${pre}-qty`).value)    || 0;
+  const unit  = document.getElementById(`${pre}-unit`).value.trim() || 'units';
+  const low   = parseInt(document.getElementById(`${pre}-low`).value)    || 1;
+  const notes = document.getElementById(`${pre}-notes`).value.trim();
+  if (!name) { showToast('Please enter a name'); return; }
+  const item = { id: Date.now(), name, cost, qty, unit, low, notes };
+  if (type === 'ingredient') {
+    inventory.push(item);
+    localStorage.setItem('mco_inv_ingredients', JSON.stringify(inventory));
+    [`${pre}-name`,`${pre}-cost`,`${pre}-qty`,`${pre}-unit`,`${pre}-low`,`${pre}-notes`].forEach(id => document.getElementById(id).value = '');
+    renderIngredients();
+  } else {
+    supplies.push(item);
+    localStorage.setItem('mco_inv_supplies', JSON.stringify(supplies));
+    [`${pre}-name`,`${pre}-cost`,`${pre}-qty`,`${pre}-unit`,`${pre}-low`,`${pre}-notes`].forEach(id => document.getElementById(id).value = '');
+    renderSupplies();
+  }
+  renderProfitBanner();
+  showToast(`✅ ${name} added`);
+}
+
+function addEquipment() {
+  const name  = document.getElementById('e-name').value.trim();
+  const notes = document.getElementById('e-notes').value.trim();
+  if (!name) { showToast('Please enter equipment name'); return; }
+  equipment.push({ id: Date.now(), name, notes });
+  localStorage.setItem('mco_inv_equipment', JSON.stringify(equipment));
+  document.getElementById('e-name').value  = '';
+  document.getElementById('e-notes').value = '';
+  renderEquipment();
+  showToast(`✅ ${name} added`);
+}
+
+// ── RENDER INGREDIENTS ──
+function renderIngredients() {
+  const totalCost = inventory.reduce((s,i) => s + i.cost * i.qty, 0);
+  const lowCount  = inventory.filter(i => i.qty <= i.low).length;
+  document.getElementById('ing-count').textContent = inventory.length;
+  document.getElementById('ing-cost').textContent  = '$' + totalCost.toFixed(2);
+  document.getElementById('ing-low').textContent   = lowCount;
+
+  const el = document.getElementById('list-ingredients');
+  if (!inventory.length) { el.innerHTML = `<div class="empty"><div class="e-icon">🌿</div>No ingredients added yet.</div>`; return; }
+  el.innerHTML = '';
+  [...inventory].sort((a,b) => a.qty - b.qty).forEach(item => renderItemCard(el, item, 'ingredient'));
+}
+
+// ── RENDER SUPPLIES ──
+function renderSupplies() {
+  const totalCost = supplies.reduce((s,i) => s + i.cost * i.qty, 0);
+  const lowCount  = supplies.filter(i => i.qty <= i.low).length;
+  document.getElementById('sup-count').textContent = supplies.length;
+  document.getElementById('sup-cost').textContent  = '$' + totalCost.toFixed(2);
+  document.getElementById('sup-low').textContent   = lowCount;
+
+  const el = document.getElementById('list-supplies');
+  if (!supplies.length) { el.innerHTML = `<div class="empty"><div class="e-icon">☕</div>No supplies added yet.</div>`; return; }
+  el.innerHTML = '';
+  [...supplies].sort((a,b) => a.qty - b.qty).forEach(item => renderItemCard(el, item, 'supply'));
+}
+
+function renderItemCard(container, item, type) {
+  const isLow  = item.qty <= item.low;
+  const isZero = item.qty === 0;
+  const card = document.createElement('div');
+  card.className = `inv-card${isZero ? ' zero' : isLow ? ' low' : ''}`;
+  card.innerHTML = `
+    <div class="inv-top">
+      <div class="inv-name">${item.name}</div>
+      ${isZero ? `<span class="low-badge">❌ Out</span>` : isLow ? `<span class="low-badge">⚠️ Low</span>` : `<span class="in-stock">✓ In Stock</span>`}
+    </div>
+    <div class="inv-details">
+      <div class="inv-detail">
+        <span class="inv-detail-label">Cost / unit</span>
+        <span class="inv-detail-val">$${item.cost.toFixed(2)}</span>
+      </div>
+      <div class="inv-detail">
+        <span class="inv-detail-label">Total value</span>
+        <span class="inv-detail-val" style="color:var(--green-dark);">$${(item.cost * item.qty).toFixed(2)}</span>
+      </div>
+      <div class="inv-detail">
+        <span class="inv-detail-label">Alert at</span>
+        <span class="inv-detail-val">${item.low} ${item.unit}</span>
+      </div>
+    </div>
+    <div class="qty-row">
+      <div class="qty-label">Quantity</div>
+      <div class="qty-ctrl">
+        <button class="qbtn minus" onclick="adjustQty('${type}',${item.id},-1)">−</button>
+        <span class="qty-val ${isLow ? 'low' : 'good'}">${item.qty}</span>
+        <button class="qbtn plus"  onclick="adjustQty('${type}',${item.id},1)">+</button>
+      </div>
+      <span style="font-size:13px;color:var(--text-soft);">${item.unit}</span>
+    </div>
+    ${item.notes ? `<div class="inv-notes">📝 ${item.notes}</div>` : ''}
+    <div class="inv-footer">
+      <div style="display:flex;gap:8px;">
+        <button class="btn-edit" onclick="openEdit('${type}',${item.id})">✏️ Edit</button>
+        <button class="btn-del"  onclick="deleteItem('${type}',${item.id})">🗑</button>
+      </div>
+    </div>
+  `;
+  container.appendChild(card);
+}
+
+// ── RENDER EQUIPMENT ──
+function renderEquipment() {
+  const el = document.getElementById('list-equipment');
+  if (!equipment.length) { el.innerHTML = `<div class="empty"><div class="e-icon">🔧</div>No equipment notes added yet.</div>`; return; }
+  el.innerHTML = '';
+  equipment.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'equip-card';
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+        <div class="equip-name">${item.name}</div>
+        <button class="btn-del" onclick="deleteEquipment(${item.id})">🗑</button>
+      </div>
+      ${item.notes ? `<div class="equip-note">${item.notes}</div>` : ''}
+    `;
+    el.appendChild(card);
+  });
+}
+
+// ── QTY ADJUST ──
+function adjustQty(type, id, delta) {
+  const arr = type === 'ingredient' ? inventory : supplies;
+  const key = type === 'ingredient' ? 'mco_inv_ingredients' : 'mco_inv_supplies';
+  const idx = arr.findIndex(i => i.id === id);
+  if (idx === -1) return;
+  arr[idx].qty = Math.max(0, arr[idx].qty + delta);
+  localStorage.setItem(key, JSON.stringify(arr));
+  type === 'ingredient' ? renderIngredients() : renderSupplies();
+  renderProfitBanner();
+}
+
+// ── DELETE ──
+function deleteItem(type, id) {
+  if (!confirm('Remove this item?')) return;
+  if (type === 'ingredient') {
+    inventory = inventory.filter(i => i.id !== id);
+    localStorage.setItem('mco_inv_ingredients', JSON.stringify(inventory));
+    renderIngredients();
+  } else {
+    supplies = supplies.filter(i => i.id !== id);
+    localStorage.setItem('mco_inv_supplies', JSON.stringify(supplies));
+    renderSupplies();
+  }
+  renderProfitBanner();
+  showToast('🗑 Removed');
+}
+
+function deleteEquipment(id) {
+  if (!confirm('Remove this equipment note?')) return;
+  equipment = equipment.filter(i => i.id !== id);
+  localStorage.setItem('mco_inv_equipment', JSON.stringify(equipment));
+  renderEquipment();
+  showToast('🗑 Removed');
+}
+
+// ── EDIT MODAL ──
+function openEdit(type, id) {
+  const arr  = type === 'ingredient' ? inventory : supplies;
+  const item = arr.find(i => i.id === id);
+  if (!item) return;
+  editingId   = id;
+  editingType = type;
+  document.getElementById('e-edit-name').value  = item.name;
+  document.getElementById('e-edit-cost').value  = item.cost;
+  document.getElementById('e-edit-qty').value   = item.qty;
+  document.getElementById('e-edit-unit').value  = item.unit;
+  document.getElementById('e-edit-low').value   = item.low;
+  document.getElementById('e-edit-notes').value = item.notes || '';
+  document.getElementById('editOverlay').classList.add('open');
+}
+function closeEditOutside(e) { if (e.target === document.getElementById('editOverlay')) document.getElementById('editOverlay').classList.remove('open'); }
+function saveEdit() {
+  if (!editingId) return;
+  const arr = editingType === 'ingredient' ? inventory : supplies;
+  const key = editingType === 'ingredient' ? 'mco_inv_ingredients' : 'mco_inv_supplies';
+  const idx = arr.findIndex(i => i.id === editingId);
+  if (idx === -1) return;
+  arr[idx].name  = document.getElementById('e-edit-name').value.trim() || arr[idx].name;
+  arr[idx].cost  = parseFloat(document.getElementById('e-edit-cost').value) || 0;
+  arr[idx].qty   = parseInt(document.getElementById('e-edit-qty').value)    || 0;
+  arr[idx].unit  = document.getElementById('e-edit-unit').value.trim() || 'units';
+  arr[idx].low   = parseInt(document.getElementById('e-edit-low').value)    || 1;
+  arr[idx].notes = document.getElementById('e-edit-notes').value.trim();
+  localStorage.setItem(key, JSON.stringify(arr));
+  document.getElementById('editOverlay').classList.remove('open');
+  editingType === 'ingredient' ? renderIngredients() : renderSupplies();
+  renderProfitBanner();
+  showToast('✅ Item updated');
+}
+
+// ── TOAST ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+window.addEventListener('load', () => document.getElementById('passInput').focus());
+</script>
+</body>
+</html>
