@@ -468,7 +468,7 @@ textarea { resize:vertical; min-height:80px; }
       <div class="chip-row" id="sweetnessChips">
         <div class="chip" onclick="selectChip('sweetness',this,'No Sugar')">No Sugar</div>
         <div class="chip" onclick="selectChip('sweetness',this,'Less Sweet')">Less Sweet</div>
-        <div class="chip selected" onclick="selectChip('sweetness',this,'Regular')">Regular</div>
+        <div class="chip selected" onclick="selectChip('sweetness',this,'Regular Sweetness')">Regular Sweetness</div>
         <div class="chip" onclick="selectChip('sweetness',this,'Extra Sweet')">Extra Sweet</div>
       </div>
     </div>
@@ -487,7 +487,7 @@ let cart = {};
 let selectedSlot = '';
 let currentOrder = null;
 let modalItem = null;
-let modalSweetness = 'Regular';
+let modalSweetness = 'Regular Sweetness';
 
 // ── SUPABASE HELPERS ──
 async function supabaseInsert(data) {
@@ -539,10 +539,10 @@ function showTab(tab) {
 
 function openModal(name, price, qtyElId) {
   modalItem = { name, price, qtyElId };
-  modalSweetness = 'Regular';
+  modalSweetness = 'Regular Sweetness';
   document.getElementById('modalName').textContent = name;
   document.getElementById('modalPrice').textContent = '$' + price;
-  document.querySelectorAll('#sweetnessChips .chip').forEach(c => c.classList.toggle('selected', c.textContent === 'Regular'));
+  document.querySelectorAll('#sweetnessChips .chip').forEach(c => c.classList.toggle('selected', c.textContent === 'Regular Sweetness'));
   document.getElementById('modalOverlay').classList.add('open');
 }
 function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); modalItem = null; }
