@@ -596,8 +596,26 @@ function showPage(id) {
   window.scrollTo(0,0);
 }
 function showTab(tab) {
-  if (tab === 'menu') showPage('page-menu');
-  else { buildSummary(); showPage('page-order'); }
+  if (tab === 'menu') {
+    showPage('page-menu');
+    syncCartCounters();
+  } else {
+    buildSummary();
+    showPage('page-order');
+  }
+}
+
+function syncCartCounters() {
+  // Reset all qty displays to 0 first
+  document.querySelectorAll('.qty-num').forEach(el => el.textContent = '0');
+  // Then set correct values from cart
+  Object.values(cart).forEach(({ id, name, qty }) => {
+    // Match by id first, fallback to name-based IDs
+    const byId = document.getElementById('qty-' + id);
+    if (byId) {
+      byId.textContent = (parseInt(byId.textContent) || 0) + qty;
+    }
+  });
 }
 
 function openModal(name, price, qtyElId) {
@@ -619,7 +637,7 @@ function addToCartFromModal() {
   if (!modalItem) return;
   const { name, price, qtyElId } = modalItem;
   const key = `${name}||${modalSweetness}`;
-  if (!cart[key]) cart[key] = { name, price, qty:0, sweetness:modalSweetness };
+  if (!cart[key]) cart[key] = { name, price, qty:0, sweetness:modalSweetness, id:qtyElId };
   cart[key].qty++;
   if (qtyElId) {
     const total = Object.values(cart).filter(v=>v.name===name).reduce((s,v)=>s+v.qty,0);
@@ -661,14 +679,42 @@ function buildSummary() {
     c.innerHTML = '<div style="color:var(--text-soft);font-size:13px;padding:8px 0;">No items yet!</div>';
     document.getElementById('summaryTotal').textContent = '$0'; return;
   }
-  Object.values(cart).forEach(({name,qty,price,sweetness}) => {
+  Object.entries(cart).forEach(([key, {name,qty,price,sweetness}]) => {
     const row = document.createElement('div');
     row.className = 'summary-item';
-    row.style.cssText = 'flex-direction:column;align-items:flex-start;gap:2px;';
-    row.innerHTML = `<div style="display:flex;justify-content:space-between;width:100%;"><span style="font-weight:500;">${qty}× ${name}</span><span>$${qty*price}</span></div><div style="font-size:11px;color:var(--text-soft);">${sweetness}</div>`;
+    row.style.cssText = 'flex-direction:column;align-items:flex-start;gap:4px;';
+    row.innerHTML = `
+      <div style="display:flex;justify-content:space-between;width:100%;align-items:center;">
+        <span style="font-weight:500;">${qty}× ${name}</span>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span>$${qty*price}</span>
+          <button onclick="removeFromSummary('${key}')" style="background:none;border:none;cursor:pointer;font-size:15px;color:#cc6666;padding:0;line-height:1;">🗑</button>
+        </div>
+      </div>
+      ${sweetness ? `<div style="font-size:11px;color:var(--text-soft);">${sweetness}</div>` : ''}`;
     c.appendChild(row);
   });
   document.getElementById('summaryTotal').textContent = '$'+cartTotal();
+}
+
+function removeFromSummary(key) {
+  const item = cart[key];
+  if (!item) return;
+  const qtyEl = document.getElementById('qty-' + item.id);
+  delete cart[key];
+  // Update menu counter
+  if (qtyEl) {
+    const remaining = Object.values(cart).filter(v=>v.id===item.id).reduce((s,v)=>s+v.qty,0);
+    qtyEl.textContent = remaining;
+  }
+  renderCartBar();
+  buildSummary();
+  // If cart is now empty go back to menu
+  if (!cartCount()) {
+    showToast('Cart is empty — add something first!');
+    showPage('page-menu');
+    syncCartCounters();
+  }
 }
 function initSlots() {
   // Morning slot closes at 10:20am on April 5
@@ -759,7 +805,7 @@ async function confirmOrder() {
   currentOrder = null;
   showPage('page-confirm');
 }
-function backToMenu() { showPage('page-menu'); }
+function backToMenu() { showPage('page-menu'); syncCartCounters(); }
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');

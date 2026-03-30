@@ -104,7 +104,7 @@ body { font-family:'Jost',sans-serif; background:var(--cream); color:var(--text)
 .btn-picked  { background:var(--cream-dark); color:var(--text-mid); }
 .btn-text    { background:#e8f4ff; color:#1a5c8c; border:1px solid #3D95CE; }
 .btn-delete  { background:#fff0f0; color:#cc3333; border:1px solid #ffaaaa; }
-.btn-small   { font-size:11px; padding:5px 10px; }
+.btn-edit-order { background:#e8f4ff; color:#1a5c8c; border:1px solid #3D95CE; }
 
 .empty-state { text-align:center; padding:24px 12px; color:var(--text-soft); font-size:13px; line-height:1.7; }
 .e-icon { font-size:28px; margin-bottom:6px; }
@@ -322,6 +322,21 @@ body { font-family:'Jost',sans-serif; background:var(--cream); color:var(--text)
       <div class="subcat-divider"></div>
       <div id="list-all-preorder"></div>
     </div>
+  </div>
+</div>
+
+<!-- ══ EDIT ORDER MODAL ══ -->
+<div class="overlay" id="editOrderOverlay" onclick="closeOutside(event,'editOrderOverlay')">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Edit Order</div>
+    <div class="sheet-sub" id="editOrderName"></div>
+    <div id="editOrderItems" style="margin-bottom:16px;"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid var(--cream-dark);font-weight:700;font-size:16px;color:var(--green-dark);">
+      <span>New Total</span><span id="editOrderTotal">$0</span>
+    </div>
+    <button class="wi-log-btn" onclick="saveEditOrder()">Save Changes →</button>
+    <button style="width:100%;background:none;border:none;color:var(--text-soft);font-size:13px;cursor:pointer;margin-top:10px;" onclick="document.getElementById('editOrderOverlay').classList.remove('open')">Cancel</button>
   </div>
 </div>
 
@@ -722,6 +737,7 @@ function fillSubcat(listId, items, type, icon, emptyMsg) {
         </div>
         <div class="order-actions">
           <button class="btn btn-ticket" onclick="openTicket(${o.id})">🎫</button>
+          <button class="btn btn-edit-order" onclick="openEditOrder(${o.id})">✏️</button>
           ${smsBtn}${actions}
           <button class="btn btn-delete" onclick="deletePreorder(${o.id})">🗑</button>
         </div>
@@ -865,6 +881,84 @@ async function logWalkin() {
   await loadOrders(); renderAll();
   document.getElementById('walkinOverlay').classList.remove('open');
   showToast(`✅ Walk-in logged — ${first} · $${total}`);
+}
+
+// ── EDIT ORDER ──
+let editingOrder = null;
+let editingItems = [];
+
+const MENU_PRICES = {
+  '#1':6,'#2':6,'#3':6,'#4':6,'#5':6,'#6':7,'#7':7,'#8':7,'#9':7
+};
+
+function openEditOrder(id) {
+  const o = orders.find(o => o.id === id);
+  if (!o) return;
+  editingOrder = o;
+  // Parse items string into array
+  editingItems = (o.items||'').split(',').map(raw => raw.trim()).filter(Boolean);
+  document.getElementById('editOrderName').textContent = o.name + ' · ' + o.slot;
+  renderEditItems();
+  document.getElementById('editOrderOverlay').classList.add('open');
+}
+
+function renderEditItems() {
+  const container = document.getElementById('editOrderItems');
+  if (!editingItems.length) {
+    container.innerHTML = `<div style="text-align:center;color:var(--text-soft);padding:20px;font-size:13px;">⚠️ No items left — save to remove order entirely or cancel.</div>`;
+    document.getElementById('editOrderTotal').textContent = '$0';
+    return;
+  }
+  container.innerHTML = '';
+  let total = 0;
+  editingItems.forEach((item, idx) => {
+    const qty    = parseInt((item.match(/^(\d+)x/)||[])[1]||1);
+    const body   = item.replace(/^\d+x\s*/,'');
+    const nameOnly = body.replace(/\s*\([^)]+\)\s*$/,'').trim();
+    const num    = getItemNumber(nameOnly) || '';
+    const price  = MENU_PRICES[num] || 0;
+    total += qty * price;
+
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--cream-dark);';
+    row.innerHTML = `
+      <div style="font-family:'DM Serif Display',serif;font-size:24px;color:var(--green-dark);min-width:38px;font-weight:700;">${num}</div>
+      <div style="flex:1;font-size:13px;color:var(--text);">${item.replace(/^\d+x\s*/,'')}</div>
+      <button onclick="removeEditItem(${idx})" style="background:#fff0f0;border:1px solid #ffaaaa;color:#cc3333;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;">Remove</button>`;
+    container.appendChild(row);
+  });
+  document.getElementById('editOrderTotal').textContent = '$' + total;
+}
+
+function removeEditItem(idx) {
+  editingItems.splice(idx, 1);
+  renderEditItems();
+}
+
+async function saveEditOrder() {
+  if (!editingOrder) return;
+  if (!editingItems.length) {
+    if (!confirm('No items left — this will delete the entire order. Continue?')) return;
+    await sbDelete(editingOrder.id);
+    document.getElementById('editOrderOverlay').classList.remove('open');
+    await loadOrders(); renderAll();
+    showToast('🗑 Order removed');
+    return;
+  }
+  // Recalculate total
+  let total = 0;
+  editingItems.forEach(item => {
+    const qty  = parseInt((item.match(/^(\d+)x/)||[])[1]||1);
+    const body = item.replace(/^\d+x\s*/,'');
+    const nameOnly = body.replace(/\s*\([^)]+\)\s*$/,'').trim();
+    const num  = getItemNumber(nameOnly) || '';
+    total += qty * (MENU_PRICES[num] || 0);
+  });
+  const newItems = editingItems.join(', ');
+  await sbUpdate(editingOrder.id, { items: newItems, total });
+  document.getElementById('editOrderOverlay').classList.remove('open');
+  await loadOrders(); renderAll();
+  showToast('✅ Order updated');
 }
 
 // ── TICKET ──
