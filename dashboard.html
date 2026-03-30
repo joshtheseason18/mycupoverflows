@@ -205,6 +205,9 @@ body { font-family:'Jost',sans-serif; background:var(--cream); color:var(--text)
     <div class="main-tab" id="tab-preorder" onclick="switchTab('preorder')">
       Pre-Orders <span class="tab-badge" id="badge-preorder">0</span>
     </div>
+    <div class="main-tab" id="tab-allsales" onclick="switchTab('allsales')">
+      All Sales
+    </div>
   </div>
 
   <!-- ══ WALK-IN PANEL ══ -->
@@ -226,32 +229,92 @@ body { font-family:'Jost',sans-serif; background:var(--cream); color:var(--text)
       <div class="stat-card"><div class="stat-num" id="po-ready">0</div><div class="stat-lbl">Ready</div></div>
     </div>
 
-    <!-- Subcategory 1: Orders Received -->
-    <div class="subcat">
-      <div class="subcat-header">
-        <div class="subcat-title">📥 Orders Received <span class="sc-badge sc-blue" id="sc-received">0</span></div>
-      </div>
-      <div class="subcat-divider"></div>
-      <div id="list-received"></div>
+    <!-- ── BEFORE SERVICE ── -->
+    <div style="background:var(--green-dark);border-radius:16px;padding:14px 18px;margin-bottom:20px;">
+      <div style="font-size:10px;letter-spacing:0.3em;color:var(--gold);text-transform:uppercase;margin-bottom:2px;">Session 1</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--cream);">Before Service <span class="tab-badge" id="badge-morning">0</span></div>
+      <div style="font-size:12px;color:var(--gold-light);margin-top:2px;">9:45 – 10:20am</div>
     </div>
 
-    <!-- Subcategory 2: Payment Confirmed -->
     <div class="subcat">
       <div class="subcat-header">
-        <div class="subcat-title">✅ Payment Confirmed <span class="sc-badge sc-gold" id="sc-confirmed">0</span></div>
+        <div class="subcat-title">📥 Received <span class="sc-badge sc-blue" id="sc-morning-received">0</span></div>
       </div>
       <div class="subcat-divider"></div>
-      <div id="list-confirmed"></div>
+      <div id="list-morning-received"></div>
     </div>
 
-    <!-- Subcategory 3: Ready for Pickup -->
     <div class="subcat">
       <div class="subcat-header">
-        <div class="subcat-title">🔔 Ready for Pickup <span class="sc-badge sc-green" id="sc-ready">0</span></div>
+        <div class="subcat-title">✅ Payment Confirmed <span class="sc-badge sc-gold" id="sc-morning-confirmed">0</span></div>
+      </div>
+      <div class="subcat-divider"></div>
+      <div id="list-morning-confirmed"></div>
+    </div>
+
+    <div class="subcat">
+      <div class="subcat-header">
+        <div class="subcat-title">🔔 Ready for Pickup <span class="sc-badge sc-green" id="sc-morning-ready">0</span></div>
+      </div>
+      <div class="subcat-divider"></div>
+      <div id="list-morning-ready"></div>
+    </div>
+
+    <!-- ── AFTER SERVICE ── -->
+    <div style="background:var(--green-dark);border-radius:16px;padding:14px 18px;margin-bottom:20px;margin-top:8px;">
+      <div style="font-size:10px;letter-spacing:0.3em;color:var(--gold);text-transform:uppercase;margin-bottom:2px;">Session 2</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--cream);">After Service <span class="tab-badge" id="badge-afternoon">0</span></div>
+      <div style="font-size:12px;color:var(--gold-light);margin-top:2px;">12:00 – 1:00pm</div>
+    </div>
+
+    <div class="subcat">
+      <div class="subcat-header">
+        <div class="subcat-title">📥 Received <span class="sc-badge sc-blue" id="sc-afternoon-received">0</span></div>
+      </div>
+      <div class="subcat-divider"></div>
+      <div id="list-afternoon-received"></div>
+    </div>
+
+    <div class="subcat">
+      <div class="subcat-header">
+        <div class="subcat-title">✅ Payment Confirmed <span class="sc-badge sc-gold" id="sc-afternoon-confirmed">0</span></div>
+      </div>
+      <div class="subcat-divider"></div>
+      <div id="list-afternoon-confirmed"></div>
+    </div>
+
+    <div class="subcat">
+      <div class="subcat-header">
+        <div class="subcat-title">🔔 Ready for Pickup <span class="sc-badge sc-green" id="sc-afternoon-ready">0</span></div>
         <button class="btn btn-small btn-picked" onclick="clearPickedUp()">Clear Picked Up</button>
       </div>
       <div class="subcat-divider"></div>
-      <div id="list-ready"></div>
+      <div id="list-afternoon-ready"></div>
+    </div>
+  </div>
+
+  <!-- ══ ALL SALES PANEL ══ -->
+  <div id="panel-allsales" class="section" style="display:none;">
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num" id="all-orders">0</div><div class="stat-lbl">Total Orders</div></div>
+      <div class="stat-card"><div class="stat-num" id="all-revenue">$0</div><div class="stat-lbl">Total Revenue</div></div>
+      <div class="stat-card"><div class="stat-num" id="all-drinks">0</div><div class="stat-lbl">Drinks Made</div></div>
+    </div>
+
+    <div class="subcat">
+      <div class="subcat-header">
+        <div class="subcat-title">🚶 Walk-ins <span class="sc-badge sc-gold" id="sc-all-walkin">0</span></div>
+      </div>
+      <div class="subcat-divider"></div>
+      <div id="list-all-walkin"></div>
+    </div>
+
+    <div class="subcat">
+      <div class="subcat-header">
+        <div class="subcat-title">📦 Pre-Orders <span class="sc-badge sc-blue" id="sc-all-preorder">0</span></div>
+      </div>
+      <div class="subcat-divider"></div>
+      <div id="list-all-preorder"></div>
     </div>
   </div>
 </div>
@@ -353,18 +416,20 @@ function save() { localStorage.setItem('mco_orders', JSON.stringify(orders)); }
 
 // ── TABS ──
 function switchTab(tab) {
-  document.getElementById('panel-walkin').style.display   = tab === 'walkin'   ? 'block' : 'none';
-  document.getElementById('panel-preorder').style.display = tab === 'preorder' ? 'block' : 'none';
+  document.getElementById('panel-walkin').style.display    = tab === 'walkin'   ? 'block' : 'none';
+  document.getElementById('panel-preorder').style.display  = tab === 'preorder' ? 'block' : 'none';
+  document.getElementById('panel-allsales').style.display  = tab === 'allsales' ? 'block' : 'none';
   document.getElementById('tab-walkin').classList.toggle('active',   tab === 'walkin');
   document.getElementById('tab-preorder').classList.toggle('active', tab === 'preorder');
+  document.getElementById('tab-allsales').classList.toggle('active', tab === 'allsales');
 }
 
 // ── RENDER ALL ──
 function renderAll() {
   renderWalkins();
   renderPreorders();
-  // tab badges
-  const walkins   = orders.filter(o => o.walkin);
+  renderAllSales();
+  const walkins    = orders.filter(o => o.walkin);
   const actionable = orders.filter(o => !o.walkin && (o.status === 'pending' || o.status === 'confirmed'));
   document.getElementById('badge-walkin').textContent   = walkins.length;
   document.getElementById('badge-preorder').textContent = actionable.length;
@@ -404,23 +469,86 @@ function renderWalkins() {
   });
 }
 
-// ── PRE-ORDERS ──
+// ── PRE-ORDERS — split by slot ──
 function renderPreorders() {
-  const all       = orders.filter(o => !o.walkin);
-  const received  = all.filter(o => o.status === 'pending').reverse();
-  const confirmed = all.filter(o => o.status === 'confirmed').reverse();
-  const ready     = all.filter(o => o.status === 'ready' || o.status === 'picked').reverse();
+  const all = orders.filter(o => !o.walkin);
+  const isMorning   = o => o.slot && o.slot.toLowerCase().includes('before');
+  const isAfternoon = o => o.slot && !o.slot.toLowerCase().includes('before');
 
-  document.getElementById('po-received').textContent  = received.length;
-  document.getElementById('po-confirmed').textContent = confirmed.length;
-  document.getElementById('po-ready').textContent     = ready.filter(o=>o.status==='ready').length;
-  document.getElementById('sc-received').textContent  = received.length;
-  document.getElementById('sc-confirmed').textContent = confirmed.length;
-  document.getElementById('sc-ready').textContent     = ready.length;
+  const morning   = all.filter(isMorning);
+  const afternoon = all.filter(isAfternoon);
 
-  fillSubcat('list-received',  received,  'pending',   '📭', 'No orders received yet.');
-  fillSubcat('list-confirmed', confirmed, 'confirmed', '💳', 'No payments confirmed yet.');
-  fillSubcat('list-ready',     ready,     'ready',     '🟢', 'No orders ready yet.');
+  document.getElementById('po-received').textContent  = all.filter(o=>o.status==='pending').length;
+  document.getElementById('po-confirmed').textContent = all.filter(o=>o.status==='confirmed').length;
+  document.getElementById('po-ready').textContent     = all.filter(o=>o.status==='ready').length;
+
+  document.getElementById('badge-morning').textContent          = morning.filter(o=>o.status!=='picked').length;
+  document.getElementById('sc-morning-received').textContent    = morning.filter(o=>o.status==='pending').length;
+  document.getElementById('sc-morning-confirmed').textContent   = morning.filter(o=>o.status==='confirmed').length;
+  document.getElementById('sc-morning-ready').textContent       = morning.filter(o=>o.status==='ready'||o.status==='picked').length;
+
+  document.getElementById('badge-afternoon').textContent        = afternoon.filter(o=>o.status!=='picked').length;
+  document.getElementById('sc-afternoon-received').textContent  = afternoon.filter(o=>o.status==='pending').length;
+  document.getElementById('sc-afternoon-confirmed').textContent = afternoon.filter(o=>o.status==='confirmed').length;
+  document.getElementById('sc-afternoon-ready').textContent     = afternoon.filter(o=>o.status==='ready'||o.status==='picked').length;
+
+  fillSubcat('list-morning-received',   morning.filter(o=>o.status==='pending').reverse(),                          'pending',   '📭', 'No orders yet.');
+  fillSubcat('list-morning-confirmed',  morning.filter(o=>o.status==='confirmed').reverse(),                        'confirmed', '💳', 'No confirmed payments.');
+  fillSubcat('list-morning-ready',      morning.filter(o=>o.status==='ready'||o.status==='picked').reverse(),       'ready',     '🟢', 'No orders ready yet.');
+  fillSubcat('list-afternoon-received', afternoon.filter(o=>o.status==='pending').reverse(),                        'pending',   '📭', 'No orders yet.');
+  fillSubcat('list-afternoon-confirmed',afternoon.filter(o=>o.status==='confirmed').reverse(),                      'confirmed', '💳', 'No confirmed payments.');
+  fillSubcat('list-afternoon-ready',    afternoon.filter(o=>o.status==='ready'||o.status==='picked').reverse(),     'ready',     '🟢', 'No orders ready yet.');
+}
+
+// ── ALL SALES ──
+function renderAllSales() {
+  const walkins   = orders.filter(o => o.walkin);
+  const preorders = orders.filter(o => !o.walkin);
+  const revenue   = orders.reduce((s,o)=>s+o.total,0);
+  const drinks    = orders.reduce((s,o)=>s+Object.values(o.items).reduce((a,v)=>a+v.qty,0),0);
+
+  document.getElementById('all-orders').textContent  = orders.length;
+  document.getElementById('all-revenue').textContent = '$'+revenue;
+  document.getElementById('all-drinks').textContent  = drinks;
+  document.getElementById('sc-all-walkin').textContent   = walkins.length;
+  document.getElementById('sc-all-preorder').textContent = preorders.length;
+
+  const wiEl = document.getElementById('list-all-walkin');
+  if (!walkins.length) {
+    wiEl.innerHTML = `<div class="empty-state" style="padding:16px;"><div class="e-icon" style="font-size:24px;">🚶</div>No walk-ins yet.</div>`;
+  } else {
+    wiEl.innerHTML = '';
+    [...walkins].reverse().forEach(o => {
+      const itemsHtml = Object.values(o.items).map(({name,qty})=>`${qty}× ${name}`).join(', ');
+      const card = document.createElement('div');
+      card.className = 'order-card s-walkin';
+      card.innerHTML = `
+        <div class="order-top-row"><div class="order-name">${o.name}</div><span class="tag tag-walkin">Walk-in</span></div>
+        <div class="order-slot">${o.time}</div>
+        <div class="order-items">${itemsHtml}</div>
+        <div class="order-footer"><div class="order-amount">$${o.total}</div><button class="btn btn-ticket" onclick="openTicket(${o.id})">🎫</button></div>`;
+      wiEl.appendChild(card);
+    });
+  }
+
+  const poEl = document.getElementById('list-all-preorder');
+  if (!preorders.length) {
+    poEl.innerHTML = `<div class="empty-state" style="padding:16px;"><div class="e-icon" style="font-size:24px;">📦</div>No pre-orders yet.</div>`;
+  } else {
+    poEl.innerHTML = '';
+    const statusLabels = { pending:'Pending', confirmed:'Confirmed', ready:'Ready ✓', picked:'Picked Up' };
+    [...preorders].reverse().forEach(o => {
+      const itemsHtml = Object.values(o.items).map(({name,qty})=>`${qty}× ${name}`).join(', ');
+      const card = document.createElement('div');
+      card.className = `order-card s-${o.status}`;
+      card.innerHTML = `
+        <div class="order-top-row"><div class="order-name">${o.name}</div><span class="tag tag-preorder">${statusLabels[o.status]||o.status}</span></div>
+        <div class="order-slot">📍 ${o.slot} · ${o.time}</div>
+        <div class="order-items">${itemsHtml}</div>
+        <div class="order-footer"><div class="order-amount">$${o.total}</div><button class="btn btn-ticket" onclick="openTicket(${o.id})">🎫</button></div>`;
+      poEl.appendChild(card);
+    });
+  }
 }
 
 function fillSubcat(listId, items, type, icon, emptyMsg) {
