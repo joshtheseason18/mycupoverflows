@@ -224,7 +224,7 @@ textarea { resize:vertical; min-height:80px; }
       <span>Sunday, April 5 · 9:45–10:20am &amp; 12:00–1:00pm</span>
     </div>
     <div style="margin-top:12px;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.4);border-radius:12px;padding:10px 18px;font-size:12px;color:var(--gold-light);line-height:1.8;">
-      ⏰ Morning pre-orders close: Saturday, April 4 at 11:59PM
+      ⏰ Pre-orders for pick-up Before Service starts close: Saturday, April 4 at 11:59PM
     </div>
   </div>
   <div class="tab-bar">
@@ -771,6 +771,8 @@ function submitOrder() {
   document.getElementById('zelleIcon').textContent = '📋';
   document.getElementById('zelleCard').style.borderColor = '#6D1ED4';
   document.getElementById('zelleCopiedMsg').style.display = 'none';
+  // Save order so it survives app-switching to Venmo/Zelle
+  sessionStorage.setItem('mco_pending_order', JSON.stringify(currentOrder));
   window.scrollTo(0,0);
 }
 function handleZellePay() {
@@ -790,6 +792,8 @@ async function confirmOrder() {
     if (btn) { btn.disabled = false; btn.textContent = "I've Paid — Confirm Order ✓"; }
     return;
   }
+  // Clear saved order state
+  sessionStorage.removeItem('mco_pending_order');
   logToSheets(currentOrder);
   const itemLines = currentOrder.items.split(', ').map(i =>
     `<div class="confirm-row"><span>${i}</span></div>`
@@ -818,6 +822,22 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2800);
 }
 window.addEventListener('load', () => {
+  // Restore pending order if customer left to pay and came back
+  const saved = sessionStorage.getItem('mco_pending_order');
+  if (saved) {
+    try {
+      currentOrder = JSON.parse(saved);
+      document.getElementById('payAmount').textContent = '$' + currentOrder.total;
+      document.getElementById('orderFormSection').style.display = 'none';
+      document.getElementById('paySection').style.display = 'block';
+      const btn = document.querySelector('.submit-btn[onclick="confirmOrder()"]');
+      if (btn) { btn.disabled = false; btn.textContent = "I've Paid — Confirm Order ✓"; }
+      showPage('page-order');
+    } catch(e) {
+      sessionStorage.removeItem('mco_pending_order');
+    }
+  }
+
   // Dismiss splash after animations complete
   setTimeout(() => {
     document.getElementById('splash').classList.add('hidden');
