@@ -22,7 +22,7 @@
   --white:       #fdfaf5;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-body { font-family:'Jost',sans-serif; background:var(--cream); color:var(--text); min-height:100vh; }
+body { font-family:'Jost',sans-serif; background:var(--cream); color:var(--text); min-height:100vh; overflow-x:hidden; }
 
 .page { display:none; min-height:100vh; }
 .page.active { display:block; }
@@ -159,8 +159,9 @@ textarea { resize:vertical; min-height:80px; }
       <strong>📍 Cross Culture Church</strong>
       <span>Sunday, April 5 · 9:45–10:20am &amp; 12:00–1:00pm</span>
     </div>
-    <div style="margin-top:12px;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.4);border-radius:12px;padding:10px 18px;font-size:12px;color:var(--gold-light);">
-      ⏰ Pre-orders close: Saturday, April 4 at 11:59PM
+    <div style="margin-top:12px;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.4);border-radius:12px;padding:10px 18px;font-size:12px;color:var(--gold-light);line-height:1.8;">
+      ⏰ Morning pre-orders close: Saturday, April 4 at 11:59PM<br/>
+      After Service pre-orders open until Sunday at 12:00PM
     </div>
   </div>
   <div class="tab-bar">
@@ -374,7 +375,7 @@ textarea { resize:vertical; min-height:80px; }
     </div>
     <div class="field-group">
       <label>Phone Number <span style="color:#cc4444;font-size:11px;">*</span></label>
-      <input type="tel" id="custPhone" placeholder="(xxx) xxx-xxxx" required/>
+      <input type="tel" id="custPhone" placeholder="(xxx) xxx-xxxx" oninput="formatPhone(this)" inputmode="numeric" required/>
     </div>
     <div class="field-group">
       <label>Choose Pickup Time <span style="color:#cc4444;font-size:11px;">*</span></label>
@@ -447,7 +448,7 @@ textarea { resize:vertical; min-height:80px; }
 
 <!-- ══ CONFIRMATION ══ -->
 <div id="page-confirm" class="page">
-  <div class="section confirm-screen">
+  <div class="section confirm-screen" style="min-height:100vh;padding-bottom:60px;">
     <div class="confirm-icon">🎉</div>
     <div class="confirm-title">You're all set!</div>
     <div class="confirm-sub">Your order has been received! Once we confirm your payment, we'll text you when your drink is ready for pickup. See you Sunday! 🍵</div>
@@ -602,16 +603,17 @@ function buildSummary() {
     const row = document.createElement('div');
     row.className = 'summary-item';
     row.style.cssText = 'flex-direction:column;align-items:flex-start;gap:2px;';
-    row.innerHTML = `<div style="display:flex;justify-content:space-between;width:100%;"><span style="font-weight:500;">${qty}× ${name}</span><span>$${qty*price}</span></div><div style="font-size:11px;color:var(--text-soft);">${sweetness}</div>`;
+    row.innerHTML = `<div style="display:flex;justify-content:space-between;width:100%;"><span style="font-weight:500;">${qty}× ${name}</span><span>$${qty*price}</span></div><div style="font-size:11px;color:var(--text-soft);">${sweetness} Sweetness</div>`;
     c.appendChild(row);
   });
   document.getElementById('summaryTotal').textContent = '$'+cartTotal();
 }
 function initSlots() {
+  // Morning slot closes at 10:20am on April 5
   const cutoff = new Date('2026-04-05T10:20:00');
   const now = new Date();
-  const morningSlot = document.getElementById('slot-morning');
   if (now >= cutoff) {
+    const morningSlot = document.getElementById('slot-morning');
     morningSlot.classList.add('disabled');
     morningSlot.onclick = null;
     document.getElementById('morning-cutoff').textContent = 'Closed';
@@ -666,9 +668,14 @@ function handleZellePay() {
 }
 async function confirmOrder() {
   if (!currentOrder) return;
-  showToast('Saving your order...');
+  const btn = document.querySelector('.submit-btn[onclick="confirmOrder()"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
   const ok = await supabaseInsert(currentOrder);
-  if (!ok) { showToast('⚠️ Connection issue — please try again'); return; }
+  if (!ok) {
+    showToast('⚠️ Connection issue — please try again');
+    if (btn) { btn.disabled = false; btn.textContent = "I've Paid — Confirm Order ✓"; }
+    return;
+  }
   logToSheets(currentOrder);
   const itemLines = currentOrder.items.split(', ').map(i =>
     `<div class="confirm-row"><span>${i}</span></div>`
@@ -678,9 +685,12 @@ async function confirmOrder() {
     <div class="confirm-row"><span>Pickup</span><strong>${currentOrder.slot}</strong></div>
     <div class="confirm-row"><span>Name</span><strong>${currentOrder.name}</strong></div>`;
   cart = {};
+  selectedSlot = '';
   document.querySelectorAll('.qty-num').forEach(el => el.textContent = '0');
   document.getElementById('custFirstName').value = '';
-  document.getElementById('custLastName').value = '';
+  document.getElementById('custLastName').value  = '';
+  document.getElementById('custPhone').value     = '';
+  document.querySelectorAll('.slot').forEach(s => s.classList.remove('selected','error'));
   renderCartBar();
   document.getElementById('orderFormSection').style.display = 'block';
   document.getElementById('paySection').style.display = 'none';
@@ -695,205 +705,40 @@ function showToast(msg) {
 }
 window.addEventListener('load', () => {
   initSlots();
-  const orderCutoff = new Date('2026-04-05T00:00:00');
   const now = new Date();
-  if (now >= orderCutoff) {
+  const morningCutoff   = new Date('2026-04-05T00:00:00'); // midnight Sat→Sun
+  const afternoonCutoff = new Date('2026-04-05T13:00:00'); // 1:00pm Sunday
+
+  // After 1pm Sunday — block all ordering
+  if (now >= afternoonCutoff) {
     const orderTab = document.querySelector('.tab[onclick="showTab(\'order\')"]');
     if (orderTab) {
-      orderTab.onclick = () => showToast('⏰ Pre-orders are now closed. See you Sunday!');
+      orderTab.onclick = () => showToast('⏰ Pre-orders are now closed. See you next time!');
       orderTab.style.opacity = '0.5';
     }
     document.getElementById('cartBar').querySelector('.cart-btn').onclick = () =>
-      showToast('⏰ Pre-orders are now closed. See you Sunday!');
+      showToast('⏰ Pre-orders are now closed. See you next time!');
   }
-});
-</script>
-
-function showPage(id) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  window.scrollTo(0,0);
-}
-function showTab(tab) {
-  if (tab === 'menu') showPage('page-menu');
-  else { buildSummary(); showPage('page-order'); }
-}
-
-function openModal(name, price, qtyElId) {
-  modalItem = { name, price, qtyElId };
-  modalSweetness = 'Regular';
-  document.getElementById('modalName').textContent = name;
-  document.getElementById('modalPrice').textContent = '$' + price;
-  document.querySelectorAll('#sweetnessChips .chip').forEach(c => c.classList.toggle('selected', c.textContent === 'Regular'));
-  document.getElementById('modalOverlay').classList.add('open');
-}
-function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); modalItem = null; }
-function closeModalOutside(e) { if (e.target === document.getElementById('modalOverlay')) closeModal(); }
-function selectChip(group, el, value) {
-  const id = group === 'sweetness' ? 'sweetnessChips' : 'iceChips';
-  document.querySelectorAll(`#${id} .chip`).forEach(c => c.classList.remove('selected'));
-  el.classList.add('selected');
-  if (group === 'sweetness') modalSweetness = value; else modalIce = value;
-}
-function addToCartFromModal() {
-  if (!modalItem) return;
-  const { name, price, qtyElId } = modalItem;
-  const key = `${name}||${modalSweetness}`;
-  if (!cart[key]) cart[key] = { name, price, qty:0, sweetness:modalSweetness, ice:'Regular Ice' };
-  cart[key].qty++;
-  if (qtyElId) {
-    const total = Object.values(cart).filter(v=>v.name===name).reduce((s,v)=>s+v.qty,0);
-    const el = document.getElementById(qtyElId);
-    if (el) el.textContent = total;
-  }
-  renderCartBar(); closeModal();
-  showToast(`Added — ${modalSweetness} 🍵`);
-}
-function updateCart(name, delta, price, qtyElId) {
-  if (delta < 0) {
-    const keys = Object.keys(cart).filter(k => cart[k].name === name);
-    if (!keys.length) return;
-    const last = keys[keys.length-1];
-    cart[last].qty = Math.max(0, cart[last].qty + delta);
-    if (cart[last].qty === 0) delete cart[last];
-    const total = Object.values(cart).filter(v=>v.name===name).reduce((s,v)=>s+v.qty,0);
-    const el = document.getElementById(qtyElId);
-    if (el) el.textContent = total;
-    renderCartBar();
-  }
-}
-function cartTotal() { return Object.values(cart).reduce((s,v)=>s+v.qty*v.price,0); }
-function cartCount() { return Object.values(cart).reduce((s,v)=>s+v.qty,0); }
-function renderCartBar() {
-  const total = cartTotal();
-  document.getElementById('cartCount').textContent = cartCount()+' item'+(cartCount()!==1?'s':'');
-  document.getElementById('cartTotal').textContent = '$'+total;
-  document.getElementById('cartBar').classList.toggle('visible', total > 0);
-}
-function goToOrder() {
-  if (!cartCount()) { showToast('Add something first!'); return; }
-  buildSummary(); showPage('page-order');
-}
-function buildSummary() {
-  const c = document.getElementById('summaryItems');
-  c.innerHTML = '';
-  if (!cartCount()) {
-    c.innerHTML = '<div style="color:var(--text-soft);font-size:13px;padding:8px 0;">No items yet!</div>';
-    document.getElementById('summaryTotal').textContent = '$0'; return;
-  }
-  Object.values(cart).forEach(({name,qty,price,sweetness,ice}) => {
-    const row = document.createElement('div');
-    row.className = 'summary-item';
-    row.style.cssText = 'flex-direction:column;align-items:flex-start;gap:2px;';
-    row.innerHTML = `<div style="display:flex;justify-content:space-between;width:100%;"><span style="font-weight:500;">${qty}× ${name}</span><span>$${qty*price}</span></div><div style="font-size:11px;color:var(--text-soft);">${sweetness}</div>`;
-    c.appendChild(row);
-  });
-  document.getElementById('summaryTotal').textContent = '$'+cartTotal();
-}
-function initSlots() {
-  // Morning slot closes at 10:20am on April 5 2026
-  const cutoff = new Date('2026-04-05T10:20:00');
-  const now = new Date();
-  const morningSlot = document.getElementById('slot-morning');
-  const notice = document.getElementById('slot-notice');
-  if (now >= cutoff) {
-    morningSlot.classList.add('disabled');
-    morningSlot.onclick = null;
-    document.getElementById('morning-cutoff').textContent = 'Closed';
-    notice.style.display = 'block';
-  }
-}
-function selectSlot(el, slot) {
-  if (el.classList.contains('disabled')) return;
-  document.querySelectorAll('.slot').forEach(s => { s.classList.remove('selected'); s.classList.remove('error'); });
-  el.classList.add('selected');
-  selectedSlot = slot;
-  document.getElementById('slot-error').style.display = 'none';
-}
-function submitOrder() {
-  const firstName = document.getElementById('custFirstName').value.trim();
-  const lastName  = document.getElementById('custLastName').value.trim();
-  const phone = document.getElementById('custPhone').value.trim();
-  if (!firstName) { showToast('Please enter your first name'); return; }
-  if (!lastName)  { showToast('Please enter your last name'); return; }
-  if (!phone) { showToast('Please enter your phone number'); return; }
-  const digitsOnly = phone.replace(/\D/g, '');
-  if (digitsOnly.length !== 10) { showToast('Please enter a valid 10-digit phone number'); return; }
-  if (!selectedSlot) {
-    document.getElementById('slot-error').style.display = 'block';
-    document.querySelectorAll('.slot:not(.disabled)').forEach(s => s.classList.add('error'));
-    document.getElementById('pickupSlots').scrollIntoView({behavior:'smooth', block:'center'});
-    return;
-  }
-  document.getElementById('slot-error').style.display = 'none';
-  if (!cartCount()) { showToast('Your cart is empty!'); return; }
-  const name = firstName + ' ' + lastName;
-  currentOrder = {
-    id: Date.now(), name, phone, slot: selectedSlot,
-    notes: '',
-    items: JSON.parse(JSON.stringify(cart)),
-    total: cartTotal(), status:'pending',
-    time: new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})
-  };
-  document.getElementById('payAmount').textContent = '$'+currentOrder.total;
-  document.getElementById('orderFormSection').style.display = 'none';
-  document.getElementById('paySection').style.display = 'block';
-  // reset Zelle card
-  document.getElementById('zelleIcon').textContent = '📋';
-  document.getElementById('zelleCard').style.borderColor = '#6D1ED4';
-  document.getElementById('zelleCopiedMsg').style.display = 'none';
-  window.scrollTo(0,0);
-}
-function handleZellePay() {
-  navigator.clipboard.writeText('747-306-8426').catch(()=>{});
-  document.getElementById('zelleIcon').textContent = '✓';
-  document.getElementById('zelleCard').style.borderColor = '#4a1ea0';
-  document.getElementById('zelleCopiedMsg').style.display = 'block';
-  showToast('📋 Zelle number copied!');
-}
-function confirmOrder() {
-  if (!currentOrder) return;
-  orders.push(currentOrder);
-  localStorage.setItem('mco_orders', JSON.stringify(orders));
-  logToSheets(currentOrder);
-  const items = Object.values(currentOrder.items).map(({name,qty,price,sweetness}) =>
-    `<div class="confirm-row"><span>${qty}× ${name}<br><small style="color:var(--text-soft)">${sweetness}</small></span><strong>$${qty*price}</strong></div>`
-  ).join('');
-  document.getElementById('confirmDetails').innerHTML = `${items}
-    <div class="confirm-row"><span>Total</span><strong style="color:var(--green-dark)">$${currentOrder.total}</strong></div>
-    <div class="confirm-row"><span>Pickup</span><strong>${currentOrder.slot}</strong></div>
-    <div class="confirm-row"><span>Name</span><strong>${currentOrder.name}</strong></div>`;
-  cart = {};
-  document.querySelectorAll('.qty-num').forEach(el => el.textContent = '0');
-  document.getElementById('custFirstName').value = '';
-  document.getElementById('custLastName').value = '';
-  renderCartBar();
-  document.getElementById('orderFormSection').style.display = 'block';
-  document.getElementById('paySection').style.display = 'none';
-  currentOrder = null;
-  showPage('page-confirm');
-}
-function backToMenu() { showPage('page-menu'); }
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2800);
-}
-window.addEventListener('load', () => {
-  initSlots();
-  // Block ordering after Saturday April 4 at 11:59PM
-  const orderCutoff = new Date('2026-04-05T00:00:00');
-  const now = new Date();
-  if (now >= orderCutoff) {
-    const orderTab = document.querySelector('.tab[onclick="showTab(\'order\')"]');
-    if (orderTab) {
-      orderTab.onclick = () => showToast('⏰ Pre-orders are now closed. See you Sunday!');
-      orderTab.style.opacity = '0.5';
+  // After midnight Saturday — disable morning slot only, afternoon still open
+  else if (now >= morningCutoff) {
+    const morningSlot = document.getElementById('slot-morning');
+    if (morningSlot) {
+      morningSlot.classList.add('disabled');
+      morningSlot.onclick = null;
+      document.getElementById('morning-cutoff').textContent = 'Closed';
     }
-    document.getElementById('cartBar').querySelector('.cart-btn').onclick = () =>
-      showToast('⏰ Pre-orders are now closed. See you Sunday!');
   }
 });
+
+function formatPhone(input) {
+  let val = input.value.replace(/\D/g,'');
+  if (val.length > 10) val = val.slice(0,10);
+  let formatted = '';
+  if (val.length > 0) formatted = '(' + val.slice(0,3);
+  if (val.length >= 4) formatted += ') ' + val.slice(3,6);
+  if (val.length >= 7) formatted += '-' + val.slice(6,10);
+  input.value = formatted;
+}
 </script>
 </body>
 </html>

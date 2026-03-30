@@ -294,12 +294,12 @@ textarea.f-input { resize:vertical; min-height:72px; }
 
 <script>
 const PASSWORD = 'psalm23';
-const SHEETS_URL = localStorage.getItem('mco_sheets_url') || '';
+const SUPABASE_URL = 'https://aexhnoajcxmjcgnfqnsv.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFleGhub2FqY3htamNnbmZxbnN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4ODI2NTQsImV4cCI6MjA5MDQ1ODY1NH0.M8bi4X7yr-TghM7H5TGS5l3g88biJZxSWHEy8TcWIDA';
 
 let inventory   = JSON.parse(localStorage.getItem('mco_inv_ingredients') || '[]');
 let supplies    = JSON.parse(localStorage.getItem('mco_inv_supplies')    || '[]');
 let equipment   = JSON.parse(localStorage.getItem('mco_inv_equipment')   || '[]');
-let currentTab  = 'ingredients';
 let editingId   = null;
 let editingType = null;
 
@@ -324,7 +324,6 @@ function logout() {
 
 // ── TABS ──
 function switchTab(tab) {
-  currentTab = tab;
   ['ingredients','supplies','equipment'].forEach(t => {
     document.getElementById('panel-'+t).style.display = t === tab ? 'block' : 'none';
     document.getElementById('tab-'+t).classList.toggle('active', t === tab);
@@ -332,22 +331,29 @@ function switchTab(tab) {
 }
 
 // ── RENDER ALL ──
-function renderAll() {
-  renderProfitBanner();
+async function renderAll() {
+  await renderProfitBanner();
   renderIngredients();
   renderSupplies();
   renderEquipment();
 }
 
 // ── PROFIT BANNER ──
-function renderProfitBanner() {
-  const orders  = JSON.parse(localStorage.getItem('mco_orders') || '[]');
-  const revenue = orders.reduce((s,o) => s + o.total, 0);
-  const ingCost = inventory.reduce((s,i) => s + (i.cost * i.qty), 0);
-  const supCost = supplies.reduce((s,i)  => s + (i.cost * i.qty), 0);
+async function renderProfitBanner() {
+  let revenue = 0;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/orders?select=total`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      revenue = data.reduce((s, o) => s + (o.total || 0), 0);
+    }
+  } catch(e) {}
+  const ingCost  = inventory.reduce((s,i) => s + (i.cost * i.qty), 0);
+  const supCost  = supplies.reduce((s,i)  => s + (i.cost * i.qty), 0);
   const totalCost = ingCost + supCost;
   const profit    = revenue - totalCost;
-
   document.getElementById('p-revenue').textContent = '$' + revenue.toFixed(2);
   document.getElementById('p-cost').textContent    = '-$' + totalCost.toFixed(2);
   document.getElementById('p-profit').textContent  = (profit >= 0 ? '+$' : '-$') + Math.abs(profit).toFixed(2);
