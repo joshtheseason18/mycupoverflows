@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>MCO — Owner</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍵</text></svg>"/>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
 :root {
@@ -427,8 +428,8 @@ function fillSubcat(listId, items, type, icon, emptyMsg) {
   if (!items.length) { el.innerHTML = `<div class="empty-state" style="padding:16px 12px;"><div class="e-icon" style="font-size:24px;">${icon}</div>${emptyMsg}</div>`; return; }
   el.innerHTML = '';
   items.forEach(o => {
-    const itemsHtml = Object.values(o.items).map(({name,qty,sweetness,ice})=>
-      `${qty}× ${name} <span style="opacity:0.6;font-size:11px;">(${sweetness}, ${ice})</span>`
+    const itemsHtml = Object.values(o.items).map(({name,qty,sweetness})=>
+      `${qty}× ${name} <span style="opacity:0.6;font-size:11px;">(${sweetness})</span>`
     ).join('<br>');
 
     let actions = '';
@@ -574,7 +575,7 @@ function logWalkin() {
   const items = {};
   Object.entries(walkinCart).forEach(([name,qty])=>{
     const it=MENU.find(m=>m.name===name);
-    items[name]={name,qty,price:it.price,sweetness:'Regular',ice:'Regular Ice'};
+    items[name]={name,qty,price:it.price,sweetness:'Regular'};
   });
   const sale = { id:Date.now(), name:first+' '+last, phone:'—', slot:'Walk-in', notes:'', items, total, status:'picked', time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), walkin:true };
   orders.push(sale);
@@ -587,12 +588,12 @@ function logWalkin() {
 function openTicket(id) {
   const o = orders.find(o=>o.id===id); if (!o) return;
   const firstName = o.name.split(' ')[0];
-  const itemsHtml = Object.values(o.items).map(({name,qty,sweetness,ice})=>`
+  const itemsHtml = Object.values(o.items).map(({name,qty,sweetness})=>`
     <div class="ticket-item">
       <div class="ticket-qty">${qty}</div>
       <div>
         <div class="ticket-item-name">${name}</div>
-        <div class="ticket-item-mods">${sweetness} · ${ice}</div>
+        <div class="ticket-item-mods">${sweetness}</div>
       </div>
     </div>`).join('');
   document.getElementById('ticketCard').innerHTML = `
@@ -622,7 +623,7 @@ function logToSheets(order) {
   fetch(sheetsUrl, {
     method:'POST', mode:'no-cors',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({ timestamp:new Date().toLocaleString(), type:order.walkin?'Walk-in':'Pre-Order', name:order.name, phone:order.phone, items, total:order.total, slot:order.slot, notes:order.notes||'', status:order.status })
+    body:JSON.stringify({ timestamp:new Date().toLocaleString(), type:order.walkin?'Walk-in':'Pre-Order', name:order.name, phone:order.phone, items, total:order.total, slot:order.slot, status:order.status })
   }).catch(()=>{});
 }
 

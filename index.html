@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>My Cup Overflows</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍵</text></svg>"/>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
 :root {
@@ -483,7 +484,6 @@ let orders = JSON.parse(localStorage.getItem('mco_orders') || '[]');
 let currentOrder = null;
 let modalItem = null;
 let modalSweetness = 'Regular';
-let modalIce = 'Regular Ice';
 
 // ── Your Google Sheets URL ──
 const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyMUP1Op7Wra8m3a25wFLH9aIsgtkorudZKOjptBiMxPYVFWnsbWwPFG6F_xXvUqJTj/exec';
@@ -583,7 +583,7 @@ function buildSummary() {
     const row = document.createElement('div');
     row.className = 'summary-item';
     row.style.cssText = 'flex-direction:column;align-items:flex-start;gap:2px;';
-    row.innerHTML = `<div style="display:flex;justify-content:space-between;width:100%;"><span style="font-weight:500;">${qty}× ${name}</span><span>$${qty*price}</span></div><div style="font-size:11px;color:var(--text-soft);">${sweetness} · ${ice}</div>`;
+    row.innerHTML = `<div style="display:flex;justify-content:space-between;width:100%;"><span style="font-weight:500;">${qty}× ${name}</span><span>$${qty*price}</span></div><div style="font-size:11px;color:var(--text-soft);">${sweetness}</div>`;
     c.appendChild(row);
   });
   document.getElementById('summaryTotal').textContent = '$'+cartTotal();
@@ -677,7 +677,21 @@ function showToast(msg) {
   t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2800);
 }
-window.addEventListener('load', initSlots);
+window.addEventListener('load', () => {
+  initSlots();
+  // Block ordering after Saturday April 4 at 11:59PM
+  const orderCutoff = new Date('2026-04-05T00:00:00');
+  const now = new Date();
+  if (now >= orderCutoff) {
+    const orderTab = document.querySelector('.tab[onclick="showTab(\'order\')"]');
+    if (orderTab) {
+      orderTab.onclick = () => showToast('⏰ Pre-orders are now closed. See you Sunday!');
+      orderTab.style.opacity = '0.5';
+    }
+    document.getElementById('cartBar').querySelector('.cart-btn').onclick = () =>
+      showToast('⏰ Pre-orders are now closed. See you Sunday!');
+  }
+});
 </script>
 </body>
 </html>
