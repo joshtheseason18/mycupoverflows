@@ -205,10 +205,7 @@ body { font-family:'Jost',sans-serif; background:var(--cream); color:var(--text)
   </div>
   <div class="top-bar">
     <button class="logout-btn" onclick="logout()">← Log out</button>
-    <div style="display:flex;gap:8px;">
-      <a href="inventory.html" style="font-size:11px;color:var(--gold);background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.35);border-radius:8px;padding:5px 12px;text-decoration:none;display:flex;align-items:center;gap:4px;">📦 Inventory</a>
-      <button class="sheets-btn" onclick="openConfig()">📊 Google Sheets</button>
-    </div>
+    <a href="inventory.html" style="font-size:11px;color:var(--gold);background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.35);border-radius:8px;padding:5px 12px;text-decoration:none;">📦 Inventory</a>
   </div>
 
   <!-- Main tabs -->
@@ -363,32 +360,83 @@ body { font-family:'Jost',sans-serif; background:var(--cream); color:var(--text)
   <button class="ticket-close" onclick="closeTicket()">✕ Close</button>
 </div>
 
-<!-- ══ GOOGLE SHEETS CONFIG ══ -->
-<div class="config-overlay" id="configOverlay" onclick="closeOutside(event,'configOverlay')">
-  <div class="config-box">
-    <div class="config-title">📊 Google Sheets Setup</div>
-    <div class="config-sub">
-      Paste your Google Apps Script Web App URL here to automatically log every order.<br/><br/>
-      <strong>How to set up (3 min):</strong><br/>
-      1. Open a Google Sheet → Extensions → Apps Script<br/>
-      2. Delete existing code, paste the MCO script (see below)<br/>
-      3. Click Deploy → New Deployment → Web App<br/>
-      4. Set "Who has access" to <strong>Anyone</strong><br/>
-      5. Copy the Web App URL and paste it below
-    </div>
-    <input class="config-input" id="sheetsUrl" placeholder="https://script.google.com/macros/s/..."/>
-    <button class="config-save" onclick="saveConfig()">Save & Connect</button>
-    <button class="config-cancel" onclick="closeConfig()">Cancel</button>
-  </div>
-</div>
-
 <div class="toast" id="toast"></div>
 
 <script>
-const PASSWORD = 'psalm23';
+const PASSWORD    = 'psalm23';
+const SUPABASE_URL = 'https://aexhnoajcxmjcgnfqnsv.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_qJsvQ49YE-GmSHBvMDKP9A_wRvA-Miu';
+const SHEETS_URL   = 'https://script.google.com/macros/s/AKfycbyMUP1Op7Wra8m3a25wFLH9aIsgtkorudZKOjptBiMxPYVFWnsbWwPFG6F_xXvUqJTj/exec';
+
 let orders = [];
 let walkinCart = {};
-let sheetsUrl = localStorage.getItem('mco_sheets_url') || '';
+let sheetsUrl = SHEETS_URL;
+
+// ── SUPABASE ──
+async function sbFetch(path, opts={}) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': opts.prefer || 'return=representation',
+      ...opts.headers
+    },
+    ...opts
+  });
+  if (!res.ok) { console.error('Supabase error', res.status); return null; }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+async function loadOrders() {
+  const data = await sbFetch('orders?select=*&order=created_at.asc');
+  if (data) {
+    orders = data.map(o => ({
+      id:      o.id,
+      name:    o.name,
+      phone:   o.phone,
+      slot:    o.slot,
+      items:   o.items,
+      total:   o.total,
+      status:  o.status,
+      type:    o.type,
+      notes:   o.notes || '',
+      time:    o.created_at ? new Date(o.created_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '',
+      walkin:  o.type === 'walkin'
+    }));
+  }
+}
+
+async function sbUpdate(id, data) {
+  return await sbFetch(`orders?id=eq.${id}`, {
+    method: 'PATCH',
+    prefer: 'return=minimal',
+    body: JSON.stringify(data)
+  });
+}
+
+async function sbInsert(data) {
+  return await sbFetch('orders', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+}
+
+async function sbDelete(id) {
+  return await sbFetch(`orders?id=eq.${id}`, {
+    method: 'DELETE',
+    prefer: 'return=minimal'
+  });
+}
+
+function logToSheets(order) {
+  fetch(SHEETS_URL, {
+    method:'POST', mode:'no-cors',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({ timestamp:new Date().toLocaleString(), type:order.type==='walkin'?'Walk-in':'Pre-Order', name:order.name, phone:order.phone, items:order.items, total:order.total, slot:order.slot, status:order.status })
+  }).catch(()=>{});
+}
 
 const MENU = [
   { name:'#1 Matcha Latte (Oat Milk)',              price:6 },
@@ -423,16 +471,17 @@ function logout() {
 }
 
 // ── LOAD ──
-function loadDashboard() {
-  orders = JSON.parse(localStorage.getItem('mco_orders') || '[]');
+async function loadDashboard() {
+  showToast('Loading orders...');
+  await loadOrders();
   renderAll();
   clearInterval(window._refresh);
-  window._refresh = setInterval(() => {
-    orders = JSON.parse(localStorage.getItem('mco_orders') || '[]');
+  window._refresh = setInterval(async () => {
+    await loadOrders();
     renderAll();
-  }, 12000);
+  }, 15000);
 }
-function save() { localStorage.setItem('mco_orders', JSON.stringify(orders)); }
+async function save() { /* handled per-action via Supabase */ }
 
 // ── TABS ──
 function switchTab(tab) {
@@ -464,7 +513,7 @@ function renderAll() {
 function renderWalkins() {
   const list = orders.filter(o => o.walkin).reverse();
   const revenue = list.reduce((s,o)=>s+o.total,0);
-  const drinks  = list.reduce((s,o)=>s+Object.values(o.items).reduce((a,v)=>a+v.qty,0),0);
+  const drinks  = list.reduce((s,o)=>s + (o.items||'').split(',').length ,0);
   document.getElementById('wi-count').textContent   = list.length;
   document.getElementById('wi-revenue').textContent = '$'+revenue;
   document.getElementById('wi-drinks').textContent  = drinks;
@@ -473,7 +522,7 @@ function renderWalkins() {
   if (!list.length) { el.innerHTML = `<div class="empty-state"><div class="e-icon">🚶</div>No walk-ins yet. Tap above to log one.</div>`; return; }
   el.innerHTML = '';
   list.forEach(o => {
-    const itemsHtml = Object.values(o.items).map(({name,qty})=>`${qty}× ${name}`).join('<br>');
+    const itemsHtml = (o.items||'').split(',').map(i=>`<div>${i.trim()}</div>`).join('');
     const card = document.createElement('div');
     card.className = 'order-card s-walkin';
     card.innerHTML = `
@@ -486,7 +535,6 @@ function renderWalkins() {
       <div class="order-footer">
         <div class="order-amount">$${o.total}</div>
         <div class="order-actions">
-          <button class="btn btn-ticket" onclick="openTicket(${o.id})">🎫 Ticket</button>
           <button class="btn btn-delete" onclick="deleteOrder(${o.id})">🗑</button>
         </div>
       </div>`;
@@ -544,14 +592,19 @@ function renderAllSales() {
   } else {
     wiEl.innerHTML = '';
     [...walkins].reverse().forEach(o => {
-      const itemsHtml = Object.values(o.items).map(({name,qty})=>`${qty}× ${name}`).join(', ');
+      const itemsHtml = (o.items||'').split(',').map(i=>i.trim()).join(', ');
       const card = document.createElement('div');
       card.className = 'order-card s-walkin';
       card.innerHTML = `
-        <div class="order-top-row"><div class="order-name">${o.name}</div><span class="tag tag-walkin">Walk-in</span></div>
+        <div class="order-top-row">
+          <div class="order-name">${o.name}</div>
+          <span class="tag tag-walkin">Walk-in</span>
+        </div>
         <div class="order-slot">${o.time}</div>
         <div class="order-items">${itemsHtml}</div>
-        <div class="order-footer"><div class="order-amount">$${o.total}</div><button class="btn btn-ticket" onclick="openTicket(${o.id})">🎫</button></div>`;
+        <div class="order-footer">
+          <div class="order-amount">$${o.total}</div>
+        </div>`;
       wiEl.appendChild(card);
     });
   }
@@ -563,14 +616,14 @@ function renderAllSales() {
     poEl.innerHTML = '';
     const statusLabels = { pending:'Pending', confirmed:'Confirmed', ready:'Ready ✓', picked:'Picked Up' };
     [...preorders].reverse().forEach(o => {
-      const itemsHtml = Object.values(o.items).map(({name,qty})=>`${qty}× ${name}`).join(', ');
+      const itemsHtml = (o.items||'').split(',').map(i=>i.trim()).join(', ');
       const card = document.createElement('div');
       card.className = `order-card s-${o.status}`;
       card.innerHTML = `
         <div class="order-top-row"><div class="order-name">${o.name}</div><span class="tag tag-preorder">${statusLabels[o.status]||o.status}</span></div>
         <div class="order-slot">📍 ${o.slot} · ${o.time}</div>
         <div class="order-items">${itemsHtml}</div>
-        <div class="order-footer"><div class="order-amount">$${o.total}</div><button class="btn btn-ticket" onclick="openTicket(${o.id})">🎫</button></div>`;
+        <div class="order-footer"><div class="order-amount">$${o.total}</div></div>`;
       poEl.appendChild(card);
     });
   }
@@ -581,9 +634,9 @@ function fillSubcat(listId, items, type, icon, emptyMsg) {
   if (!items.length) { el.innerHTML = `<div class="empty-state" style="padding:16px 12px;"><div class="e-icon" style="font-size:24px;">${icon}</div>${emptyMsg}</div>`; return; }
   el.innerHTML = '';
   items.forEach(o => {
-    const itemsHtml = Object.values(o.items).map(({name,qty,sweetness})=>
-      `${qty}× ${name} <span style="opacity:0.6;font-size:11px;">(${sweetness})</span>`
-    ).join('<br>');
+    const itemsHtml = (o.items||'').split(',').map(i=>
+      `<div>${i.trim()}</div>`
+    ).join('');
 
     let actions = '';
     if (o.status === 'pending')   actions = `<button class="btn btn-confirm" onclick="confirmPayment(${o.id})">✅ Confirm Payment</button>`;
@@ -619,51 +672,52 @@ function fillSubcat(listId, items, type, icon, emptyMsg) {
 }
 
 // ── ACTIONS ──
-function confirmPayment(id) {
-  const idx = orders.findIndex(o=>o.id===id); if (idx===-1) return;
-  orders[idx].status = 'confirmed';
-  save(); renderAll();
-  logToSheets(orders[idx]);
-  const o = orders[idx], name = o.name.split(' ')[0];
+async function confirmPayment(id) {
+  await sbUpdate(id, { status:'confirmed' });
+  await loadOrders(); renderAll();
+  const o = orders.find(o=>o.id===id); if (!o) return;
+  logToSheets({...o, status:'confirmed'});
+  const name = o.name.split(' ')[0];
   const msg = encodeURIComponent(`Hey ${name}! 🍵 We received your payment — we'll text you when your order is ready for pickup. See you Sunday!`);
   window.location.href = `sms:${o.phone}?&body=${msg}`;
   showToast('✅ Payment confirmed!');
 }
 
-function markReady(id) {
-  const idx = orders.findIndex(o=>o.id===id); if (idx===-1) return;
-  orders[idx].status = 'ready';
-  save(); renderAll();
-  const o = orders[idx], name = o.name.split(' ')[0];
+async function markReady(id) {
+  await sbUpdate(id, { status:'ready' });
+  await loadOrders(); renderAll();
+  const o = orders.find(o=>o.id===id); if (!o) return;
+  const name = o.name.split(' ')[0];
   const msg = encodeURIComponent(`Hey ${name}! ✅ Your matcha order is ready for pickup! Come grab it 🍵`);
   window.location.href = `sms:${o.phone}?&body=${msg}`;
   showToast('🔔 Customer notified — order ready!');
 }
 
-function markPickedUp(id) {
-  const idx = orders.findIndex(o=>o.id===id); if (idx===-1) return;
-  orders[idx].status = 'picked';
-  save(); renderAll();
+async function markPickedUp(id) {
+  await sbUpdate(id, { status:'picked' });
+  await loadOrders(); renderAll();
   showToast('✓ Picked up!');
 }
 
-function clearPickedUp() {
-  orders = orders.filter(o => !(o.status==='picked' && !o.walkin));
-  save(); renderAll();
+async function clearPickedUp() {
+  const picked = orders.filter(o => o.status==='picked' && !o.walkin);
+  for (const o of picked) await sbDelete(o.id);
+  await loadOrders(); renderAll();
   showToast('Cleared picked-up orders');
 }
 
-function deletePreorder(id) {
+async function deletePreorder(id) {
   if (!confirm('Delete this pre-order? Cannot be undone.')) return;
-  orders = orders.filter(o => o.id !== id);
-  save(); renderAll();
+  await sbDelete(id);
+  await loadOrders(); renderAll();
   showToast('🗑 Pre-order deleted');
 }
 
-function clearAllPreorders() {
+async function clearAllPreorders() {
   if (!confirm('Clear ALL pre-orders? This cannot be undone.')) return;
-  orders = orders.filter(o => o.walkin);
-  save(); renderAll();
+  const preorders = orders.filter(o => !o.walkin);
+  for (const o of preorders) await sbDelete(o.id);
+  await loadOrders(); renderAll();
   showToast('🗑 All pre-orders cleared');
 }
 
@@ -678,10 +732,10 @@ function tapToText(id) {
   window.location.href = `sms:${o.phone}?&body=${encodeURIComponent(msgs[o.status]||'')}`;
 }
 
-function deleteOrder(id) {
+async function deleteOrder(id) {
   if (!confirm('Delete this walk-in? Cannot be undone.')) return;
-  orders = orders.filter(o=>o.id!==id);
-  save(); renderAll();
+  await sbDelete(id);
+  await loadOrders(); renderAll();
   showToast('🗑 Deleted');
 }
 
@@ -732,7 +786,7 @@ function updateWiTotal() {
   document.getElementById('walkinLogBtn').disabled = total===0;
 }
 
-function logWalkin() {
+async function logWalkin() {
   const first = document.getElementById('wi-first').value.trim();
   const last  = document.getElementById('wi-last').value.trim();
   if (!first||!last) { showToast("Please enter the customer's name"); return; }
@@ -740,14 +794,16 @@ function logWalkin() {
     const it=MENU.find(m=>m.name===n); return s+(it?it.price*q:0);
   },0);
   if (!total) return;
-  const items = {};
-  Object.entries(walkinCart).forEach(([name,qty])=>{
-    const it=MENU.find(m=>m.name===name);
-    items[name]={name,qty,price:it.price,sweetness:'Regular'};
-  });
-  const sale = { id:Date.now(), name:first+' '+last, phone:'—', slot:'Walk-in', notes:'', items, total, status:'picked', time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), walkin:true };
-  orders.push(sale);
-  save(); logToSheets(sale); renderAll();
+  const itemsSummary = Object.entries(walkinCart).map(([name,qty])=>`${qty}x ${name}`).join(', ');
+  const sale = {
+    name: first+' '+last, phone:'—', slot:'Walk-in', notes:'',
+    items: itemsSummary, total, status:'picked', type:'walkin'
+  };
+  showToast('Saving...');
+  const result = await sbInsert(sale);
+  if (!result) { showToast('⚠️ Error saving — try again'); return; }
+  logToSheets({...sale, walkin:true});
+  await loadOrders(); renderAll();
   document.getElementById('walkinOverlay').classList.remove('open');
   showToast(`✅ Walk-in logged — ${first} · $${total}`);
 }
@@ -756,13 +812,10 @@ function logWalkin() {
 function openTicket(id) {
   const o = orders.find(o=>o.id===id); if (!o) return;
   const firstName = o.name.split(' ')[0];
-  const itemsHtml = Object.values(o.items).map(({name,qty,sweetness})=>`
+  const itemsHtml = (o.items||'').split(',').map(i=>`
     <div class="ticket-item">
-      <div class="ticket-qty">${qty}</div>
-      <div>
-        <div class="ticket-item-name">${name}</div>
-        <div class="ticket-item-mods">${sweetness}</div>
-      </div>
+      <div class="ticket-qty">•</div>
+      <div><div class="ticket-item-name">${i.trim()}</div></div>
     </div>`).join('');
   document.getElementById('ticketCard').innerHTML = `
     <div class="ticket-eyebrow">${o.walkin?'Walk-in':'Pre-Order'} · ${o.slot}</div>
@@ -779,21 +832,6 @@ function openTicket(id) {
   document.getElementById('ticketOverlay').classList.add('open');
 }
 function closeTicket() { document.getElementById('ticketOverlay').classList.remove('open'); }
-
-// ── GOOGLE SHEETS ──
-function openConfig()  { document.getElementById('sheetsUrl').value=sheetsUrl; document.getElementById('configOverlay').classList.add('open'); }
-function closeConfig() { document.getElementById('configOverlay').classList.remove('open'); }
-function saveConfig()  { sheetsUrl=document.getElementById('sheetsUrl').value.trim(); localStorage.setItem('mco_sheets_url',sheetsUrl); closeConfig(); showToast('📊 Sheets connected!'); }
-
-function logToSheets(order) {
-  if (!sheetsUrl) return;
-  const items = Object.values(order.items).map(({name,qty})=>`${qty}x ${name}`).join(', ');
-  fetch(sheetsUrl, {
-    method:'POST', mode:'no-cors',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({ timestamp:new Date().toLocaleString(), type:order.walkin?'Walk-in':'Pre-Order', name:order.name, phone:order.phone, items, total:order.total, slot:order.slot, status:order.status })
-  }).catch(()=>{});
-}
 
 // ── HELPERS ──
 function closeOutside(e, id) { if (e.target===document.getElementById(id)) document.getElementById(id).classList.remove('open'); }

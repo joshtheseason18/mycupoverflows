@@ -478,34 +478,227 @@ textarea { resize:vertical; min-height:80px; }
 <div class="toast" id="toast"></div>
 
 <script>
+const SUPABASE_URL = 'https://aexhnoajcxmjcgnfqnsv.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_qJsvQ49YE-GmSHBvMDKP9A_wRvA-Miu';
+const SHEETS_URL   = 'https://script.google.com/macros/s/AKfycbyMUP1Op7Wra8m3a25wFLH9aIsgtkorudZKOjptBiMxPYVFWnsbWwPFG6F_xXvUqJTj/exec';
+
 let cart = {};
 let selectedSlot = '';
-let orders = JSON.parse(localStorage.getItem('mco_orders') || '[]');
 let currentOrder = null;
 let modalItem = null;
 let modalSweetness = 'Regular';
 
-// ── Your Google Sheets URL ──
-const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyMUP1Op7Wra8m3a25wFLH9aIsgtkorudZKOjptBiMxPYVFWnsbWwPFG6F_xXvUqJTj/exec';
+// ── SUPABASE HELPERS ──
+async function supabaseInsert(data) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/orders`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Prefer': 'return=representation'
+    },
+    body: JSON.stringify(data)
+  });
+  return res.ok;
+}
 
 function logToSheets(order) {
-  const items = Object.values(order.items).map(({name,qty}) => `${qty}x ${name}`).join(', ');
   fetch(SHEETS_URL, {
-    method: 'POST',
-    mode: 'no-cors',
+    method: 'POST', mode: 'no-cors',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       timestamp: new Date().toLocaleString(),
-      type:      'Pre-Order',
-      name:      order.name,
-      phone:     order.phone,
-      items:     items,
-      total:     order.total,
-      slot:      order.slot,
-      status:    'Pending Payment'
+      type: 'Pre-Order', name: order.name,
+      phone: order.phone, items: order.items,
+      total: order.total, slot: order.slot, status: 'Pending Payment'
     })
   }).catch(() => {});
 }
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+function showTab(tab) {
+  if (tab === 'menu') showPage('page-menu');
+  else { buildSummary(); showPage('page-order'); }
+}
+
+function openModal(name, price, qtyElId) {
+  modalItem = { name, price, qtyElId };
+  modalSweetness = 'Regular';
+  document.getElementById('modalName').textContent = name;
+  document.getElementById('modalPrice').textContent = '$' + price;
+  document.querySelectorAll('#sweetnessChips .chip').forEach(c => c.classList.toggle('selected', c.textContent === 'Regular'));
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); modalItem = null; }
+function closeModalOutside(e) { if (e.target === document.getElementById('modalOverlay')) closeModal(); }
+function selectChip(group, el, value) {
+  const id = group === 'sweetness' ? 'sweetnessChips' : 'iceChips';
+  document.querySelectorAll(`#${id} .chip`).forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  if (group === 'sweetness') modalSweetness = value;
+}
+function addToCartFromModal() {
+  if (!modalItem) return;
+  const { name, price, qtyElId } = modalItem;
+  const key = `${name}||${modalSweetness}`;
+  if (!cart[key]) cart[key] = { name, price, qty:0, sweetness:modalSweetness };
+  cart[key].qty++;
+  if (qtyElId) {
+    const total = Object.values(cart).filter(v=>v.name===name).reduce((s,v)=>s+v.qty,0);
+    const el = document.getElementById(qtyElId);
+    if (el) el.textContent = total;
+  }
+  renderCartBar(); closeModal();
+  showToast(`Added — ${modalSweetness} 🍵`);
+}
+function updateCart(name, delta, price, qtyElId) {
+  if (delta < 0) {
+    const keys = Object.keys(cart).filter(k => cart[k].name === name);
+    if (!keys.length) return;
+    const last = keys[keys.length-1];
+    cart[last].qty = Math.max(0, cart[last].qty + delta);
+    if (cart[last].qty === 0) delete cart[last];
+    const total = Object.values(cart).filter(v=>v.name===name).reduce((s,v)=>s+v.qty,0);
+    const el = document.getElementById(qtyElId);
+    if (el) el.textContent = total;
+    renderCartBar();
+  }
+}
+function cartTotal() { return Object.values(cart).reduce((s,v)=>s+v.qty*v.price,0); }
+function cartCount() { return Object.values(cart).reduce((s,v)=>s+v.qty,0); }
+function renderCartBar() {
+  const total = cartTotal();
+  document.getElementById('cartCount').textContent = cartCount()+' item'+(cartCount()!==1?'s':'');
+  document.getElementById('cartTotal').textContent = '$'+total;
+  document.getElementById('cartBar').classList.toggle('visible', total > 0);
+}
+function goToOrder() {
+  if (!cartCount()) { showToast('Add something first!'); return; }
+  buildSummary(); showPage('page-order');
+}
+function buildSummary() {
+  const c = document.getElementById('summaryItems');
+  c.innerHTML = '';
+  if (!cartCount()) {
+    c.innerHTML = '<div style="color:var(--text-soft);font-size:13px;padding:8px 0;">No items yet!</div>';
+    document.getElementById('summaryTotal').textContent = '$0'; return;
+  }
+  Object.values(cart).forEach(({name,qty,price,sweetness}) => {
+    const row = document.createElement('div');
+    row.className = 'summary-item';
+    row.style.cssText = 'flex-direction:column;align-items:flex-start;gap:2px;';
+    row.innerHTML = `<div style="display:flex;justify-content:space-between;width:100%;"><span style="font-weight:500;">${qty}× ${name}</span><span>$${qty*price}</span></div><div style="font-size:11px;color:var(--text-soft);">${sweetness}</div>`;
+    c.appendChild(row);
+  });
+  document.getElementById('summaryTotal').textContent = '$'+cartTotal();
+}
+function initSlots() {
+  const cutoff = new Date('2026-04-05T10:20:00');
+  const now = new Date();
+  const morningSlot = document.getElementById('slot-morning');
+  if (now >= cutoff) {
+    morningSlot.classList.add('disabled');
+    morningSlot.onclick = null;
+    document.getElementById('morning-cutoff').textContent = 'Closed';
+    document.getElementById('slot-notice').style.display = 'block';
+  }
+}
+function selectSlot(el, slot) {
+  if (el.classList.contains('disabled')) return;
+  document.querySelectorAll('.slot').forEach(s => { s.classList.remove('selected'); s.classList.remove('error'); });
+  el.classList.add('selected');
+  selectedSlot = slot;
+  document.getElementById('slot-error').style.display = 'none';
+}
+function submitOrder() {
+  const firstName = document.getElementById('custFirstName').value.trim();
+  const lastName  = document.getElementById('custLastName').value.trim();
+  const phone = document.getElementById('custPhone').value.trim();
+  if (!firstName) { showToast('Please enter your first name'); return; }
+  if (!lastName)  { showToast('Please enter your last name'); return; }
+  if (!phone) { showToast('Please enter your phone number'); return; }
+  const digitsOnly = phone.replace(/\D/g, '');
+  if (digitsOnly.length !== 10) { showToast('Please enter a valid 10-digit phone number'); return; }
+  if (!selectedSlot) {
+    document.getElementById('slot-error').style.display = 'block';
+    document.querySelectorAll('.slot:not(.disabled)').forEach(s => s.classList.add('error'));
+    document.getElementById('pickupSlots').scrollIntoView({behavior:'smooth', block:'center'});
+    return;
+  }
+  document.getElementById('slot-error').style.display = 'none';
+  if (!cartCount()) { showToast('Your cart is empty!'); return; }
+  const name = firstName + ' ' + lastName;
+  const itemsSummary = Object.values(cart).map(({name,qty,sweetness}) => `${qty}x ${name} (${sweetness})`).join(', ');
+  currentOrder = {
+    name, phone, slot: selectedSlot, notes: '',
+    items: itemsSummary,
+    total: cartTotal(), status: 'pending', type: 'preorder',
+    time: new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})
+  };
+  document.getElementById('payAmount').textContent = '$'+currentOrder.total;
+  document.getElementById('orderFormSection').style.display = 'none';
+  document.getElementById('paySection').style.display = 'block';
+  document.getElementById('zelleIcon').textContent = '📋';
+  document.getElementById('zelleCard').style.borderColor = '#6D1ED4';
+  document.getElementById('zelleCopiedMsg').style.display = 'none';
+  window.scrollTo(0,0);
+}
+function handleZellePay() {
+  navigator.clipboard.writeText('747-306-8426').catch(()=>{});
+  document.getElementById('zelleIcon').textContent = '✓';
+  document.getElementById('zelleCard').style.borderColor = '#4a1ea0';
+  document.getElementById('zelleCopiedMsg').style.display = 'block';
+  showToast('📋 Zelle number copied!');
+}
+async function confirmOrder() {
+  if (!currentOrder) return;
+  showToast('Saving your order...');
+  const ok = await supabaseInsert(currentOrder);
+  if (!ok) { showToast('⚠️ Connection issue — please try again'); return; }
+  logToSheets(currentOrder);
+  const itemLines = currentOrder.items.split(', ').map(i =>
+    `<div class="confirm-row"><span>${i}</span></div>`
+  ).join('');
+  document.getElementById('confirmDetails').innerHTML = `${itemLines}
+    <div class="confirm-row"><span>Total</span><strong style="color:var(--green-dark)">$${currentOrder.total}</strong></div>
+    <div class="confirm-row"><span>Pickup</span><strong>${currentOrder.slot}</strong></div>
+    <div class="confirm-row"><span>Name</span><strong>${currentOrder.name}</strong></div>`;
+  cart = {};
+  document.querySelectorAll('.qty-num').forEach(el => el.textContent = '0');
+  document.getElementById('custFirstName').value = '';
+  document.getElementById('custLastName').value = '';
+  renderCartBar();
+  document.getElementById('orderFormSection').style.display = 'block';
+  document.getElementById('paySection').style.display = 'none';
+  currentOrder = null;
+  showPage('page-confirm');
+}
+function backToMenu() { showPage('page-menu'); }
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+window.addEventListener('load', () => {
+  initSlots();
+  const orderCutoff = new Date('2026-04-05T00:00:00');
+  const now = new Date();
+  if (now >= orderCutoff) {
+    const orderTab = document.querySelector('.tab[onclick="showTab(\'order\')"]');
+    if (orderTab) {
+      orderTab.onclick = () => showToast('⏰ Pre-orders are now closed. See you Sunday!');
+      orderTab.style.opacity = '0.5';
+    }
+    document.getElementById('cartBar').querySelector('.cart-btn').onclick = () =>
+      showToast('⏰ Pre-orders are now closed. See you Sunday!');
+  }
+});
+</script>
 
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
