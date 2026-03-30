@@ -637,21 +637,52 @@ function parseItemBody(itemStr) {
   return itemStr.replace(/^\d+x\s*/, '');
 }
 
+const ITEM_NUMBERS = {
+  'matcha latte (df)':                       '#1',
+  'matcha latte (oat milk)':                 '#1',
+  'mango matcha latte (df)':                 '#2',
+  'mango matcha latte (oat milk)':           '#2',
+  'coconut matcha':                          '#3',
+  'matcha latte (dairy)':                    '#4',
+  'matcha latte (whole milk)':               '#4',
+  'matcha latte':                            '#4',
+  'mango matcha latte (dairy)':              '#5',
+  'mango matcha latte (whole milk)':         '#5',
+  'mango matcha latte':                      '#5',
+  'matcha with vanilla cold foam':           '#6',
+  'matcha w/ vanilla cold foam':             '#6',
+  'matcha with matcha cold foam':            '#7',
+  'matcha w/ matcha cold foam':              '#7',
+  'matcha with banana cold foam':            '#8',
+  'matcha w/ banana cold foam':              '#8',
+  'coconut water with matcha cold foam':     '#9',
+  'coconut water w/ matcha cold foam':       '#9',
+};
+
+function getItemNumber(nameStr) {
+  const clean = nameStr.toLowerCase().trim();
+  for (const [key, num] of Object.entries(ITEM_NUMBERS)) {
+    if (clean.includes(key)) return num;
+  }
+  return '';
+}
+
 function buildItemsHtml(itemsString) {
   return (itemsString||'').split(',').map(raw => {
-    const item = raw.trim();
-    const qty        = parseItemQty(item);
-    const body       = parseItemBody(item);
-    const num        = parseItemNumber(body);
-    const name       = parseItemName(body);
-    const sweetness  = parseItemSweetness(body);
+    const item      = raw.trim();
+    const qty       = parseItemQty(item);
+    const body      = parseItemBody(item);
+    const sweetness = parseItemSweetness(body);
+    const nameOnly  = body.replace(/\s*\([^)]+\)\s*$/, '').trim();
+    const num       = getItemNumber(nameOnly) || parseItemNumber(body);
+    const displayName = nameOnly.replace(/^#\d+\s*[-–]?\s*/, '').trim();
     return `
       <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--cream-dark);">
         <div style="font-family:'DM Serif Display',serif;font-size:28px;color:var(--green-dark);line-height:1;min-width:44px;font-weight:700;">${num}</div>
         <div style="flex:1;">
           <div style="display:flex;align-items:center;gap:6px;">
             <span style="font-weight:700;font-size:13px;color:var(--text);">${qty}×</span>
-            <span style="font-size:13px;color:var(--text);">${name}</span>
+            <span style="font-size:13px;color:var(--text);">${displayName}</span>
           </div>
           ${sweetness ? `<div style="font-size:11px;color:var(--text-soft);margin-top:2px;">${sweetness}</div>` : ''}
         </div>
