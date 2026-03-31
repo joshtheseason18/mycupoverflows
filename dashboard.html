@@ -105,6 +105,9 @@ body { font-family:'Jost',sans-serif; background:var(--cream); color:var(--text)
 .btn-text    { background:#e8f4ff; color:#1a5c8c; border:1px solid #3D95CE; }
 .btn-delete  { background:#fff0f0; color:#cc3333; border:1px solid #ffaaaa; }
 .btn-edit-order { background:#e8f4ff; color:#1a5c8c; border:1px solid #3D95CE; }
+.sp-btn { width:100%; background:var(--cream); border:1.5px solid var(--cream-dark); border-radius:12px; padding:13px; font-family:'Jost',sans-serif; font-size:15px; color:var(--text); cursor:pointer; text-align:left; transition:all 0.15s; }
+.sp-btn:hover { border-color:var(--green-dark); background:var(--green-pale); }
+.sp-default { border-color:var(--green-dark); color:var(--green-dark); font-weight:600; }
 
 .empty-state { text-align:center; padding:24px 12px; color:var(--text-soft); font-size:13px; line-height:1.7; }
 .e-icon { font-size:28px; margin-bottom:6px; }
@@ -345,15 +348,32 @@ body { font-family:'Jost',sans-serif; background:var(--cream); color:var(--text)
   <div class="sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-title">Log Walk-in Sale</div>
-    <div class="sheet-sub">Enter their name, then tap + for each drink</div>
+    <div class="sheet-sub">Enter their name, tap + to add a drink with sweetness level</div>
     <span class="name-lbl">Customer Name *</span>
     <div class="name-row">
       <input class="name-input" id="wi-first" placeholder="First name"/>
       <input class="name-input" id="wi-last"  placeholder="Last name"/>
     </div>
     <div id="walkinItems"></div>
+    <!-- Added drinks list -->
+    <div id="walkinCart" style="margin-bottom:8px;"></div>
     <div class="wi-total-row"><span>Total</span><span id="walkinTotal">$0</span></div>
     <button class="wi-log-btn" id="walkinLogBtn" onclick="logWalkin()" disabled>Record Sale →</button>
+  </div>
+</div>
+
+<!-- ══ SWEETNESS PICKER (Walk-in) ══ -->
+<div class="overlay" id="sweetnessPickerOverlay" onclick="closeOutside(event,'sweetnessPickerOverlay')">
+  <div class="sheet" style="padding-bottom:32px;">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="spDrinkName"></div>
+    <div class="sheet-sub">Choose sweetness level</div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button class="sp-btn" onclick="addWalkinWithSweetness('No Sugar')">No Sugar</button>
+      <button class="sp-btn" onclick="addWalkinWithSweetness('Less Sweet')">Less Sweet</button>
+      <button class="sp-btn sp-default" onclick="addWalkinWithSweetness('Regular Sweetness')">Regular Sweetness</button>
+      <button class="sp-btn" onclick="addWalkinWithSweetness('Extra Sweet')">Extra Sweet</button>
+    </div>
   </div>
 </div>
 
@@ -373,7 +393,6 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const SHEETS_URL   = 'https://script.google.com/macros/s/AKfycbyMUP1Op7Wra8m3a25wFLH9aIsgtkorudZKOjptBiMxPYVFWnsbWwPFG6F_xXvUqJTj/exec';
 
 let orders = [];
-let walkinCart = {};
 
 // ── SUPABASE ──
 async function sbFetch(path, opts={}) {
@@ -753,7 +772,7 @@ async function confirmPayment(id) {
   const o = orders.find(o=>o.id===id); if (!o) return;
   logToSheets({...o, status:'confirmed'});
   const name = o.name.split(' ')[0];
-  const msg = encodeURIComponent(`Hey ${name}! 🍵 We received your payment — we'll text you when your order is ready for pickup. See you Sunday!`);
+  const msg = encodeURIComponent(`Hey ${name}! 🍵 We received your payment — we'll text you when your order is ready for pickup!`);
   window.location.href = `sms:${o.phone}?&body=${msg}`;
   showToast('✅ Payment confirmed!');
 }
@@ -815,11 +834,15 @@ async function deleteOrder(id) {
 }
 
 // ── WALK-IN MODAL ──
+let wiSelectedItem = null; // item pending sweetness selection
+let wiCartLines = [];      // array of {name, price, sweetness}
+
 function openWalkin() {
-  walkinCart = {};
+  wiCartLines = [];
   document.getElementById('wi-first').value = '';
   document.getElementById('wi-last').value = '';
   buildWalkinItems();
+  renderWiCart();
   document.getElementById('walkinOverlay').classList.add('open');
 }
 
@@ -827,7 +850,6 @@ function buildWalkinItems() {
   const c = document.getElementById('walkinItems');
   c.innerHTML = '';
   MENU.forEach(item => {
-    const k = item.name.replace(/[^a-z0-9]/gi,'_');
     const div = document.createElement('div');
     div.className = 'wi-item';
     div.innerHTML = `
@@ -835,41 +857,63 @@ function buildWalkinItems() {
         <div class="wi-item-name">${item.name}</div>
         <div class="wi-item-price">$${item.price}</div>
       </div>
-      <div class="wi-qty">
-        <button class="wqb minus" onclick="wiUpdate('${item.name}',${item.price},-1,'${k}')">−</button>
-        <span class="wqn" id="wq-${k}">0</span>
-        <button class="wqb plus"  onclick="wiUpdate('${item.name}',${item.price},1,'${k}')">+</button>
-      </div>`;
+      <button class="wqb plus" onclick="openSweetnessPicker('${item.name}',${item.price})">+</button>`;
     c.appendChild(div);
+  });
+}
+
+function openSweetnessPicker(name, price) {
+  wiSelectedItem = { name, price };
+  document.getElementById('spDrinkName').textContent = name;
+  document.getElementById('sweetnessPickerOverlay').classList.add('open');
+}
+
+function addWalkinWithSweetness(sweetness) {
+  if (!wiSelectedItem) return;
+  wiCartLines.push({ name: wiSelectedItem.name, price: wiSelectedItem.price, sweetness });
+  wiSelectedItem = null;
+  document.getElementById('sweetnessPickerOverlay').classList.remove('open');
+  renderWiCart();
+  showToast(`Added — ${sweetness} 🍵`);
+}
+
+function renderWiCart() {
+  const c = document.getElementById('walkinCart');
+  if (!wiCartLines.length) { c.innerHTML = ''; updateWiTotal(); return; }
+  c.innerHTML = '';
+  wiCartLines.forEach((line, idx) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--cream);border-radius:10px;margin-bottom:6px;gap:8px;';
+    row.innerHTML = `
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:500;color:var(--text);">${line.name}</div>
+        <div style="font-size:11px;color:var(--text-soft);">${line.sweetness}</div>
+      </div>
+      <div style="font-size:13px;font-weight:600;color:var(--green-dark);">$${line.price}</div>
+      <button onclick="removeWiLine(${idx})" style="background:none;border:none;color:#cc3333;font-size:15px;cursor:pointer;padding:0;">✕</button>`;
+    c.appendChild(row);
   });
   updateWiTotal();
 }
 
-function wiUpdate(name, price, delta, key) {
-  walkinCart[name] = Math.max(0, (walkinCart[name]||0)+delta);
-  if (!walkinCart[name]) delete walkinCart[name];
-  const el = document.getElementById('wq-'+key);
-  if (el) el.textContent = walkinCart[name]||0;
-  updateWiTotal();
+function removeWiLine(idx) {
+  wiCartLines.splice(idx, 1);
+  renderWiCart();
 }
 
 function updateWiTotal() {
-  const total = Object.entries(walkinCart).reduce((s,[n,q])=>{
-    const it = MENU.find(m=>m.name===n); return s+(it?it.price*q:0);
-  },0);
-  document.getElementById('walkinTotal').textContent = '$'+total;
-  document.getElementById('walkinLogBtn').disabled = total===0;
+  const total = wiCartLines.reduce((s, l) => s + l.price, 0);
+  document.getElementById('walkinTotal').textContent = '$' + total;
+  document.getElementById('walkinLogBtn').disabled = total === 0;
 }
 
 async function logWalkin() {
   const first = document.getElementById('wi-first').value.trim();
   const last  = document.getElementById('wi-last').value.trim();
   if (!first||!last) { showToast("Please enter the customer's name"); return; }
-  const total = Object.entries(walkinCart).reduce((s,[n,q])=>{
-    const it=MENU.find(m=>m.name===n); return s+(it?it.price*q:0);
-  },0);
-  if (!total) return;
-  const itemsSummary = Object.entries(walkinCart).map(([name,qty])=>`${qty}x ${name}`).join(', ');
+  if (!wiCartLines.length) return;
+  const total = wiCartLines.reduce((s, l) => s + l.price, 0);
+  const itemsSummary = wiCartLines.map(l => `1x ${l.name} (${l.sweetness})`).join(', ');
   const sale = {
     name: first+' '+last, phone:'—', slot:'Walk-in', notes:'',
     items: itemsSummary, total, status:'picked', type:'walkin'
