@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MCO Recipe Reference</title>
+<style>
+  :root {
+    --green: #2d5c3a;
+    --green-pale: #d4e8c8;
+    --gold: #c9a84c;
+    --cream: #fef9f0;
+    --cream-dark: #e0d8c4;
+    --text: #2a3828;
+    --text-soft: #6a7e62;
+    --white: #ffffff;
+    --red: #cc3333;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--cream); color: var(--text); min-height: 100vh; }
+
+  header { background: var(--green); padding: 20px 24px; position: sticky; top: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 12px rgba(0,0,0,0.2); }
+  header h1 { font-size: 18px; color: var(--cream); font-weight: 700; letter-spacing: 0.04em; }
+  header p { font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 2px; }
+  .header-actions { display: flex; gap: 10px; }
+  .btn { padding: 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: opacity 0.15s; }
+  .btn:hover { opacity: 0.85; }
+  .btn-gold { background: var(--gold); color: var(--green); }
+  .btn-outline { background: rgba(255,255,255,0.12); color: var(--cream); border: 1px solid rgba(255,255,255,0.25); }
+  .btn-sm { padding: 5px 12px; font-size: 12px; border-radius: 8px; }
+  .btn-danger { background: #fff0f0; color: var(--red); border: 1px solid #ffaaaa; }
+  .btn-green { background: var(--green); color: var(--cream); }
+
+  .container { max-width: 800px; margin: 0 auto; padding: 24px 16px 60px; }
+
+  .section-label { font-size: 10px; font-weight: 700; letter-spacing: 0.25em; text-transform: uppercase; color: var(--text-soft); margin: 28px 0 10px; display: flex; align-items: center; gap: 10px; }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--cream-dark); }
+
+  .drink-card { background: var(--white); border-radius: 18px; padding: 0; margin-bottom: 14px; box-shadow: 0 2px 14px rgba(42,56,40,0.07); overflow: hidden; }
+
+  .drink-header { display: flex; align-items: center; gap: 12px; padding: 16px 18px; cursor: pointer; user-select: none; border-bottom: 1px solid transparent; transition: border-color 0.2s; }
+  .drink-header:hover { background: var(--cream); }
+  .drink-card.open .drink-header { border-bottom-color: var(--cream-dark); }
+  .drink-num { font-size: 20px; font-family: Georgia, serif; color: var(--gold); font-weight: 700; min-width: 32px; }
+  .drink-name { font-size: 15px; font-weight: 700; color: var(--text); flex: 1; }
+  .drink-price { font-size: 13px; font-weight: 600; color: var(--green); margin-right: 8px; }
+  .drink-chevron { font-size: 12px; color: var(--text-soft); transition: transform 0.25s; }
+  .drink-card.open .drink-chevron { transform: rotate(180deg); }
+  .ingredient-count { font-size: 11px; background: var(--green-pale); color: var(--green); padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+
+  .drink-body { display: none; padding: 16px 18px 18px; }
+  .drink-card.open .drink-body { display: block; }
+
+  /* Ingredient rows */
+  .ingredients-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+  .ingredient-row { display: grid; grid-template-columns: 1fr 90px 110px 36px; gap: 8px; align-items: center; }
+  .ing-input { width: 100%; background: var(--cream); border: 1.5px solid var(--cream-dark); border-radius: 10px; padding: 9px 12px; font-size: 14px; color: var(--text); outline: none; transition: border-color 0.2s; font-family: inherit; }
+  .ing-input:focus { border-color: var(--green); }
+  .ing-input::placeholder { color: var(--text-soft); opacity: 0.6; }
+  .ing-unit { width: 100%; background: var(--cream); border: 1.5px solid var(--cream-dark); border-radius: 10px; padding: 9px 10px; font-size: 14px; color: var(--text); outline: none; transition: border-color 0.2s; font-family: inherit; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236a7e62' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px; }
+  .ing-unit:focus { border-color: var(--green); }
+  .ing-remove { width: 32px; height: 32px; border-radius: 50%; border: none; background: #fff0f0; color: var(--red); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s; flex-shrink: 0; }
+  .ing-remove:hover { background: #ffd5d5; }
+
+  .col-header { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-soft); padding: 0 12px; margin-bottom: 4px; }
+  .col-headers { display: grid; grid-template-columns: 1fr 90px 110px 36px; gap: 8px; }
+
+  .add-ingredient-btn { display: flex; align-items: center; gap: 6px; background: none; border: 1.5px dashed var(--cream-dark); border-radius: 10px; padding: 9px 14px; font-size: 13px; color: var(--text-soft); cursor: pointer; width: 100%; transition: all 0.15s; font-family: inherit; }
+  .add-ingredient-btn:hover { border-color: var(--green); color: var(--green); background: var(--cream); }
+
+  .notes-section { margin-top: 12px; }
+  .notes-label { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-soft); margin-bottom: 5px; }
+  .notes-input { width: 100%; background: var(--cream); border: 1.5px solid var(--cream-dark); border-radius: 10px; padding: 9px 12px; font-size: 13px; color: var(--text); outline: none; resize: vertical; min-height: 60px; font-family: inherit; transition: border-color 0.2s; }
+  .notes-input:focus { border-color: var(--green); }
+  .notes-input::placeholder { color: var(--text-soft); opacity: 0.6; }
+
+  /* Toast */
+  .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--green); color: var(--cream); border-radius: 30px; padding: 12px 22px; font-size: 14px; font-weight: 600; opacity: 0; transition: all 0.3s; z-index: 999; white-space: nowrap; pointer-events: none; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 540px) {
+    .ingredient-row { grid-template-columns: 1fr 70px 90px 32px; }
+    .col-headers { grid-template-columns: 1fr 70px 90px 32px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>MCO Recipe Reference</h1>
+    <p>My Cup Overflows · 12 oz cups</p>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-outline btn-sm" onclick="expandAll()">Expand all</button>
+    <button class="btn btn-gold btn-sm" onclick="saveAll()">💾 Save</button>
+  </div>
+</header>
+
+<div class="container" id="app"></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const DRINKS = [
+  { id: 1, name: "Matcha Latte (Oat Milk)",           price: "$6", category: "df" },
+  { id: 2, name: "Mango Matcha Latte (Oat Milk)",     price: "$6", category: "df" },
+  { id: 3, name: "Coconut Matcha",                    price: "$6", category: "df" },
+  { id: 4, name: "Matcha Latte",                      price: "$6", category: "dairy" },
+  { id: 5, name: "Mango Matcha Latte",                price: "$6", category: "dairy" },
+  { id: 6, name: "Matcha w/ Vanilla Cold Foam",       price: "$7", category: "foam" },
+  { id: 7, name: "Matcha w/ Matcha Cold Foam",        price: "$7", category: "foam" },
+  { id: 8, name: "Matcha w/ Banana Cold Foam",        price: "$7", category: "foam" },
+  { id: 9, name: "Coconut Water w/ Matcha Cold Foam", price: "$7", category: "foam" },
+];
+
+const DEFAULTS = {
+  1: [
+    { name: "Ceremonial matcha powder", amount: "3.5", unit: "g" },
+    { name: "Oat milk",                 amount: "110",  unit: "ml" },
+    { name: "Hot water (for whisking)", amount: "",     unit: "ml" },
+    { name: "Sweetener",               amount: "",     unit: "ml" },
+    { name: "Ice",                      amount: "",     unit: "—" },
+  ],
+  2: [
+    { name: "Ceremonial matcha powder", amount: "3.5", unit: "g" },
+    { name: "Oat milk",                 amount: "110",  unit: "ml" },
+    { name: "Mango purée",             amount: "",     unit: "ml" },
+    { name: "Hot water (for whisking)", amount: "",     unit: "ml" },
+    { name: "Sweetener",               amount: "",     unit: "ml" },
+    { name: "Ice",                      amount: "",     unit: "—" },
+  ],
+  3: [
+    { name: "Ceremonial matcha powder", amount: "3.5", unit: "g" },
+    { name: "Coconut water",           amount: "",     unit: "ml" },
+    { name: "Hot water (for whisking)", amount: "",     unit: "ml" },
+    { name: "Sweetener",               amount: "",     unit: "ml" },
+    { name: "Ice",                      amount: "",     unit: "—" },
+  ],
+  4: [
+    { name: "Ceremonial matcha powder", amount: "3.5", unit: "g" },
+    { name: "Whole milk",              amount: "110",  unit: "ml" },
+    { name: "Hot water (for whisking)", amount: "",     unit: "ml" },
+    { name: "Sweetener",               amount: "",     unit: "ml" },
+    { name: "Ice",                      amount: "",     unit: "—" },
+  ],
+  5: [
+    { name: "Ceremonial matcha powder", amount: "3.5", unit: "g" },
+    { name: "Whole milk",              amount: "110",  unit: "ml" },
+    { name: "Mango purée",             amount: "",     unit: "ml" },
+    { name: "Hot water (for whisking)", amount: "",     unit: "ml" },
+    { name: "Sweetener",               amount: "",     unit: "ml" },
+    { name: "Ice",                      amount: "",     unit: "—" },
+  ],
+  6: [
+    { name: "Ceremonial matcha powder", amount: "3.5", unit: "g" },
+    { name: "Whole milk (base)",        amount: "110",  unit: "ml" },
+    { name: "Whole milk (for foam)",    amount: "",     unit: "ml" },
+    { name: "Vanilla syrup",           amount: "",     unit: "ml" },
+    { name: "Hot water (for whisking)", amount: "",     unit: "ml" },
+    { name: "Sweetener",               amount: "",     unit: "ml" },
+    { name: "Ice",                      amount: "",     unit: "—" },
+  ],
+  7: [
+    { name: "Ceremonial matcha (base)", amount: "3.5", unit: "g" },
+    { name: "Ceremonial matcha (foam)", amount: "",     unit: "g" },
+    { name: "Whole milk (base)",        amount: "110",  unit: "ml" },
+    { name: "Whole milk (for foam)",    amount: "",     unit: "ml" },
+    { name: "Hot water (for whisking)", amount: "",     unit: "ml" },
+    { name: "Sweetener",               amount: "",     unit: "ml" },
+    { name: "Ice",                      amount: "",     unit: "—" },
+  ],
+  8: [
+    { name: "Ceremonial matcha powder", amount: "3.5", unit: "g" },
+    { name: "Whole milk (base)",        amount: "110",  unit: "ml" },
+    { name: "Whole milk (for foam)",    amount: "",     unit: "ml" },
+    { name: "Banana syrup / purée",    amount: "",     unit: "ml" },
+    { name: "Hot water (for whisking)", amount: "",     unit: "ml" },
+    { name: "Sweetener",               amount: "",     unit: "ml" },
+    { name: "Ice",                      amount: "",     unit: "—" },
+  ],
+  9: [
+    { name: "Ceremonial matcha (foam)", amount: "",     unit: "g" },
+    { name: "Coconut water",           amount: "",     unit: "ml" },
+    { name: "Whole milk (for foam)",    amount: "",     unit: "ml" },
+    { name: "Hot water (for whisking)", amount: "",     unit: "ml" },
+    { name: "Sweetener",               amount: "",     unit: "ml" },
+    { name: "Ice",                      amount: "",     unit: "—" },
+  ],
+};
+
+const CATS = {
+  df:    { label: "🌿 Dairy Free · $6" },
+  dairy: { label: "🥛 Whole Milk · $6" },
+  foam:  { label: "☁️ Whole Milk with Foam · $7" },
+};
+
+// State — load from localStorage or use defaults
+let state = {};
+function loadState() {
+  try {
+    const saved = localStorage.getItem('mco_recipes');
+    if (saved) { state = JSON.parse(saved); return; }
+  } catch(e) {}
+  DRINKS.forEach(d => {
+    state[d.id] = {
+      ingredients: (DEFAULTS[d.id] || []).map((i,idx) => ({ id: idx, name: i.name, amount: i.amount, unit: i.unit || 'ml' })),
+      notes: '',
+    };
+  });
+}
+
+function saveState() {
+  try { localStorage.setItem('mco_recipes', JSON.stringify(state)); } catch(e) {}
+}
+
+function saveAll() {
+  DRINKS.forEach(d => {
+    const card = document.getElementById('card-' + d.id);
+    if (!card) return;
+    const rows = card.querySelectorAll('.ingredient-row');
+    state[d.id].ingredients = [];
+    rows.forEach((row, idx) => {
+      const name   = row.querySelector('.ing-name').value;
+      const amount = row.querySelector('.ing-amount').value;
+      const unit   = row.querySelector('.ing-unit').value;
+      if (name || amount) state[d.id].ingredients.push({ id: idx, name, amount, unit });
+    });
+    const notes = card.querySelector('.notes-input');
+    if (notes) state[d.id].notes = notes.value;
+  });
+  saveState();
+  showToast('Saved! ✓');
+  DRINKS.forEach(d => {
+    const badge = document.getElementById('badge-' + d.id);
+    if (badge) badge.textContent = state[d.id].ingredients.length + ' ingredients';
+  });
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function toggleCard(id) {
+  const card = document.getElementById('card-' + id);
+  card.classList.toggle('open');
+}
+
+function expandAll() {
+  document.querySelectorAll('.drink-card').forEach(c => c.classList.add('open'));
+}
+
+function addIngredient(drinkId) {
+  const list = document.getElementById('ing-list-' + drinkId);
+  const newRow = makeIngredientRow(drinkId, { id: Date.now(), name: '', amount: '', unit: 'ml' });
+  list.appendChild(newRow);
+  newRow.querySelector('.ing-name').focus();
+}
+
+function removeIngredient(btn) {
+  const row = btn.closest('.ingredient-row');
+  row.remove();
+}
+
+const UNITS = ['ml', 'oz', 'g', 'tsp', 'tbsp', 'cups', 'pumps', '—'];
+
+function makeIngredientRow(drinkId, ing) {
+  const row = document.createElement('div');
+  row.className = 'ingredient-row';
+  const unitOptions = UNITS.map(u =>
+    `<option value="${u}" ${(ing.unit || 'ml') === u ? 'selected' : ''}>${u}</option>`
+  ).join('');
+  row.innerHTML = `
+    <input class="ing-input ing-name"   type="text"   placeholder="Ingredient name" value="${esc(ing.name)}"/>
+    <input class="ing-input ing-amount" type="number" placeholder="0" step="0.1" min="0" value="${esc(ing.amount)}"/>
+    <select class="ing-unit">${unitOptions}</select>
+    <button class="ing-remove" onclick="removeIngredient(this)" title="Remove">×</button>
+  `;
+  return row;
+}
+
+function esc(str) {
+  return (str || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+
+function render() {
+  const app = document.getElementById('app');
+  app.innerHTML = '';
+
+  let lastCat = null;
+  DRINKS.forEach(d => {
+    if (d.category !== lastCat) {
+      lastCat = d.category;
+      const sec = document.createElement('div');
+      sec.className = 'section-label';
+      sec.textContent = CATS[d.category].label;
+      app.appendChild(sec);
+    }
+
+    const data = state[d.id] || { ingredients: [], notes: '' };
+    const card = document.createElement('div');
+    card.className = 'drink-card';
+    card.id = 'card-' + d.id;
+
+    card.innerHTML = `
+      <div class="drink-header" onclick="toggleCard(${d.id})">
+        <div class="drink-num">#${d.id}</div>
+        <div class="drink-name">${d.name}</div>
+        <div class="drink-price">${d.price}</div>
+        <span class="ingredient-count" id="badge-${d.id}">${data.ingredients.length} ingredients</span>
+        <div class="drink-chevron">▼</div>
+      </div>
+      <div class="drink-body">
+        <div class="col-headers">
+          <div class="col-header">Ingredient</div>
+          <div class="col-header">Amount</div>
+          <div class="col-header">Unit</div>
+          <div></div>
+        </div>
+        <div class="ingredients-list" id="ing-list-${d.id}"></div>
+        <button class="add-ingredient-btn" onclick="addIngredient(${d.id})">
+          + Add ingredient
+        </button>
+        <div class="notes-section">
+          <div class="notes-label">Notes / technique</div>
+          <textarea class="notes-input" placeholder="e.g. whisk order, layering, technique tips...">${esc(data.notes)}</textarea>
+        </div>
+        <div style="display:flex;justify-content:flex-end;margin-top:12px;">
+          <button class="btn btn-green btn-sm" onclick="saveAll()">Save changes</button>
+        </div>
+      </div>
+    `;
+
+    app.appendChild(card);
+
+    // Fill ingredient rows
+    const list = card.querySelector('#ing-list-' + d.id);
+    data.ingredients.forEach(ing => {
+      list.appendChild(makeIngredientRow(d.id, ing));
+    });
+  });
+}
+
+loadState();
+render();
+</script>
+</body>
+</html>
