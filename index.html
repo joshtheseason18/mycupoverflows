@@ -14,7 +14,7 @@
   --green-pale:  #d4e8c8;
   --gold:        #c9a84c;
   --gold-light:  #e8d48a;
-  --cream:       #f2ece0;
+  --cream:       #fef9f0;
   --cream-dark:  #e0d8c4;
   --text:        #2a3828;
   --text-mid:    #5a6e4e;
@@ -28,7 +28,7 @@ body { font-family:'Jost',sans-serif; background:var(--green-dark); color:var(--
 .page.active { display:block; }
 
 .hero {
-  background:var(--cream); padding:48px 24px 40px;
+  background:#fef9f0; padding:48px 24px 40px;
   text-align:center; position:relative; overflow:hidden;
 }
 .hero::before {
@@ -46,7 +46,7 @@ body { font-family:'Jost',sans-serif; background:var(--green-dark); color:var(--
 }
 .event-badge strong { color:var(--green-dark); font-weight:600; font-size:14px; }
 
-.tab-bar { display:flex; background:var(--cream); border-top:1px solid var(--cream-dark); padding:0 16px; gap:4px; }
+.tab-bar { display:flex; background:#fef9f0; border-top:1px solid var(--cream-dark); padding:0 16px; gap:4px; }
 .tab { flex:1; padding:13px 8px; text-align:center; font-size:12px; letter-spacing:0.08em; color:var(--text-soft); cursor:pointer; border-bottom:2px solid transparent; transition:all 0.2s; user-select:none; }
 .tab.active { color:var(--green-dark); border-bottom-color:var(--green-dark); }
 
@@ -59,6 +59,7 @@ body { font-family:'Jost',sans-serif; background:var(--green-dark); color:var(--
 .menu-card:active { transform:scale(0.985); }
 .item-icon { width:52px; height:52px; background:var(--green-pale); border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:26px; flex-shrink:0; }
 .item-body { flex:1; min-width:0; }
+.item-body:hover .item-name { color:var(--green-dark); }
 .item-num { font-family:'DM Serif Display',serif; font-size:13px; color:var(--gold); font-weight:600; margin-right:6px; opacity:0.85; }
 .item-desc { font-size:11px; color:var(--text-soft); line-height:1.45; margin-top:3px; margin-bottom:4px; }
 .item-tag { display:inline-block; font-size:10px; letter-spacing:0.06em; padding:2px 8px; border-radius:20px; margin-top:2px; font-weight:500; }
@@ -75,7 +76,7 @@ body { font-family:'Jost',sans-serif; background:var(--green-dark); color:var(--
 .qty-num { font-weight:600; font-size:15px; min-width:16px; text-align:center; color:var(--text); }
 
 /* Cart bar — cream on green */
-.cart-bar { position:fixed; bottom:0; left:0; right:0; background:var(--cream); padding:14px 20px calc(14px + env(safe-area-inset-bottom)); display:flex; align-items:center; justify-content:space-between; box-shadow:0 -4px 24px rgba(0,0,0,0.25); transform:translateY(100%); transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1); z-index:100; border-top:1px solid var(--cream-dark); }
+.cart-bar { position:fixed; bottom:0; left:0; right:0; background:#fef9f0; padding:14px 20px calc(14px + env(safe-area-inset-bottom)); display:flex; align-items:center; justify-content:space-between; box-shadow:0 -4px 24px rgba(0,0,0,0.25); transform:translateY(100%); transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1); z-index:100; border-top:1px solid var(--cream-dark); }
 .cart-bar.visible { transform:translateY(0); }
 .cart-info { color:var(--text); }
 .cart-count { font-size:12px; opacity:0.6; margin-bottom:2px; color:var(--text-mid); }
@@ -106,7 +107,7 @@ textarea { resize:vertical; min-height:80px; }
 .slot.selected .slot-label { color:var(--green-dark) !important; }
 /* Slot error text on green bg */
 #slot-error { color:#ffaaaa !important; }
-.submit-btn { width:100%; background:var(--cream); color:var(--green-dark); border:none; border-radius:16px; padding:17px; font-family:'DM Serif Display',serif; font-size:19px; letter-spacing:0.04em; cursor:pointer; margin-top:8px; transition:background 0.2s; font-weight:700; }
+.submit-btn { width:100%; background:#fef9f0; color:var(--green-dark); border:none; border-radius:16px; padding:17px; font-family:'DM Serif Display',serif; font-size:19px; letter-spacing:0.04em; cursor:pointer; margin-top:8px; transition:background 0.2s; font-weight:700; }
 .submit-btn:hover { background:var(--cream-dark); }
 
 /* Confirmation screen on green bg */
@@ -163,6 +164,13 @@ textarea { resize:vertical; min-height:80px; }
 .chip.selected { border-color:var(--green-dark); background:var(--green-pale); color:var(--green-dark); }
 .modal-add-btn { width:100%; background:var(--green-dark); color:var(--cream); border:none; border-radius:16px; padding:16px; font-family:'DM Serif Display',serif; font-size:18px; letter-spacing:0.04em; cursor:pointer; margin-top:8px; transition:background 0.2s; }
 .modal-add-btn:hover { background:var(--green); }
+.modal-qty-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+.modal-qty-label { font-size:11px; letter-spacing:0.2em; text-transform:uppercase; color:var(--text-soft); font-weight:600; }
+.modal-qty-ctrl { display:flex; align-items:center; gap:14px; }
+.modal-qty-btn { width:36px; height:36px; border-radius:50%; border:none; cursor:pointer; font-size:20px; display:flex; align-items:center; justify-content:center; transition:background 0.15s; flex-shrink:0; }
+.modal-qty-btn.minus { background:var(--cream-dark); color:var(--text-mid); }
+.modal-qty-btn.plus  { background:var(--green-dark); color:var(--cream); }
+.modal-qty-num { font-family:'DM Serif Display',serif; font-size:26px; color:var(--text); min-width:28px; text-align:center; }
 </style>
 </head>
 <body>
@@ -210,7 +218,7 @@ textarea { resize:vertical; min-height:80px; }
 
       <div class="menu-card">
         <div class="item-icon">🍵</div>
-        <div class="item-body">
+        <div class="item-body" onclick="openModal('Matcha Latte (DF)',6,'qty-mdf','#1')" style="cursor:pointer;">
           <div class="item-name"><span class="item-num">#1</span> Matcha Latte <span style="font-size:13px;font-family:'Jost',sans-serif;font-weight:400;color:var(--text-soft);">(Oat Milk)</span></div>
           <div class="item-desc">Ceremonial grade matcha whisked smooth with creamy oat milk. Clean, earthy, and light.</div>
           <span class="item-tag tag-df">Dairy Free</span>
@@ -220,14 +228,14 @@ textarea { resize:vertical; min-height:80px; }
           <div class="qty-ctrl">
             <button class="qty-btn minus" onclick="updateCart('Matcha Latte (DF)',-1,6,'qty-mdf')">−</button>
             <span class="qty-num" id="qty-mdf">0</span>
-            <button class="qty-btn plus" onclick="openModal('Matcha Latte (DF)',6,'qty-mdf')">+</button>
+            <button class="qty-btn plus" onclick="openModal('Matcha Latte (DF)',6,'qty-mdf','#1')">+</button>
           </div>
         </div>
       </div>
 
       <div class="menu-card">
         <div class="item-icon">🥭</div>
-        <div class="item-body">
+        <div class="item-body" onclick="openModal('Mango Matcha Latte (DF)',6,'qty-mmdf','#2')" style="cursor:pointer;">
           <div class="item-name"><span class="item-num">#2</span> Mango Matcha Latte <span style="font-size:13px;font-family:'Jost',sans-serif;font-weight:400;color:var(--text-soft);">(Oat Milk)</span></div>
           <div class="item-desc">Mango purée on the bottom, oat milk as the base, finished with ceremonial matcha poured straight in. Fruity, creamy, and bold in every sip.</div>
           <span class="item-tag tag-df">Dairy Free</span>
@@ -237,14 +245,14 @@ textarea { resize:vertical; min-height:80px; }
           <div class="qty-ctrl">
             <button class="qty-btn minus" onclick="updateCart('Mango Matcha Latte (DF)',-1,6,'qty-mmdf')">−</button>
             <span class="qty-num" id="qty-mmdf">0</span>
-            <button class="qty-btn plus" onclick="openModal('Mango Matcha Latte (DF)',6,'qty-mmdf')">+</button>
+            <button class="qty-btn plus" onclick="openModal('Mango Matcha Latte (DF)',6,'qty-mmdf','#2')">+</button>
           </div>
         </div>
       </div>
 
       <div class="menu-card">
         <div class="item-icon">🥥</div>
-        <div class="item-body">
+        <div class="item-body" onclick="openModal('Coconut Matcha',6,'qty-cdf','#3')" style="cursor:pointer;">
           <div class="item-name"><span class="item-num">#3</span> Coconut Matcha <span style="font-size:13px;font-family:'Jost',sans-serif;font-weight:400;color:var(--text-soft);">(Dairy Free)</span></div>
           <div class="item-desc">Light coconut water base with ceremonial matcha whisked and poured right on top. Clean, refreshing, and naturally sweet.</div>
           <span class="item-tag tag-df">Dairy Free</span>
@@ -254,7 +262,7 @@ textarea { resize:vertical; min-height:80px; }
           <div class="qty-ctrl">
             <button class="qty-btn minus" onclick="updateCart('Coconut Matcha',-1,6,'qty-cdf')">−</button>
             <span class="qty-num" id="qty-cdf">0</span>
-            <button class="qty-btn plus" onclick="openModal('Coconut Matcha',6,'qty-cdf')">+</button>
+            <button class="qty-btn plus" onclick="openModal('Coconut Matcha',6,'qty-cdf','#3')">+</button>
           </div>
         </div>
       </div>
@@ -264,7 +272,7 @@ textarea { resize:vertical; min-height:80px; }
 
       <div class="menu-card">
         <div class="item-icon">🍵</div>
-        <div class="item-body">
+        <div class="item-body" onclick="openModal('Matcha Latte (Dairy)',6,'qty-md','#4')" style="cursor:pointer;">
           <div class="item-name"><span class="item-num">#4</span> Matcha Latte</div>
           <div class="item-desc">Ceremonial matcha with rich whole milk — creamy, bold, and satisfying.</div>
           <span class="item-tag tag-dairy">Whole Milk</span>
@@ -274,14 +282,14 @@ textarea { resize:vertical; min-height:80px; }
           <div class="qty-ctrl">
             <button class="qty-btn minus" onclick="updateCart('Matcha Latte (Dairy)',-1,6,'qty-md')">−</button>
             <span class="qty-num" id="qty-md">0</span>
-            <button class="qty-btn plus" onclick="openModal('Matcha Latte (Dairy)',6,'qty-md')">+</button>
+            <button class="qty-btn plus" onclick="openModal('Matcha Latte (Dairy)',6,'qty-md','#4')">+</button>
           </div>
         </div>
       </div>
 
       <div class="menu-card">
         <div class="item-icon">🥭</div>
-        <div class="item-body">
+        <div class="item-body" onclick="openModal('Mango Matcha Latte (Dairy)',6,'qty-mmd','#5')" style="cursor:pointer;">
           <div class="item-name"><span class="item-num">#5</span> Mango Matcha Latte</div>
           <div class="item-desc">Mango purée on the bottom, whole milk as the base, finished with ceremonial matcha poured straight in. Fruity, creamy, and bold in every sip.</div>
           <span class="item-tag tag-dairy">Whole Milk</span>
@@ -291,7 +299,7 @@ textarea { resize:vertical; min-height:80px; }
           <div class="qty-ctrl">
             <button class="qty-btn minus" onclick="updateCart('Mango Matcha Latte (Dairy)',-1,6,'qty-mmd')">−</button>
             <span class="qty-num" id="qty-mmd">0</span>
-            <button class="qty-btn plus" onclick="openModal('Mango Matcha Latte (Dairy)',6,'qty-mmd')">+</button>
+            <button class="qty-btn plus" onclick="openModal('Mango Matcha Latte (Dairy)',6,'qty-mmd','#5')">+</button>
           </div>
         </div>
       </div>
@@ -301,7 +309,7 @@ textarea { resize:vertical; min-height:80px; }
 
       <div class="menu-card">
         <div class="item-icon">🍵</div>
-        <div class="item-body">
+        <div class="item-body" onclick="openModal('Matcha with Vanilla Cold Foam',7,'qty-vcf','#6')" style="cursor:pointer;">
           <div class="item-name"><span class="item-num">#6</span> Matcha with Vanilla Cold Foam</div>
           <div class="item-desc">Smooth iced matcha with whole milk, crowned with a sweet, pillowy vanilla cold foam. Classic and crowd-pleasing.</div>
           <span class="item-tag tag-foam">Whole Milk with Foam</span>
@@ -311,14 +319,14 @@ textarea { resize:vertical; min-height:80px; }
           <div class="qty-ctrl">
             <button class="qty-btn minus" onclick="updateCart('Matcha with Vanilla Cold Foam',-1,7,'qty-vcf')">−</button>
             <span class="qty-num" id="qty-vcf">0</span>
-            <button class="qty-btn plus" onclick="openModal('Matcha with Vanilla Cold Foam',7,'qty-vcf')">+</button>
+            <button class="qty-btn plus" onclick="openModal('Matcha with Vanilla Cold Foam',7,'qty-vcf','#6')">+</button>
           </div>
         </div>
       </div>
 
       <div class="menu-card">
         <div class="item-icon">☁️</div>
-        <div class="item-body">
+        <div class="item-body" onclick="openModal('Matcha with Matcha Cold Foam',7,'qty-mcf','#7')" style="cursor:pointer;">
           <div class="item-name"><span class="item-num">#7</span> Matcha with Matcha Cold Foam</div>
           <div class="item-desc">Double matcha — iced matcha base topped with a thick, earthy matcha cold foam. For the true matcha lover.</div>
           <span class="item-tag tag-foam">Whole Milk with Foam</span>
@@ -328,14 +336,14 @@ textarea { resize:vertical; min-height:80px; }
           <div class="qty-ctrl">
             <button class="qty-btn minus" onclick="updateCart('Matcha with Matcha Cold Foam',-1,7,'qty-mcf')">−</button>
             <span class="qty-num" id="qty-mcf">0</span>
-            <button class="qty-btn plus" onclick="openModal('Matcha with Matcha Cold Foam',7,'qty-mcf')">+</button>
+            <button class="qty-btn plus" onclick="openModal('Matcha with Matcha Cold Foam',7,'qty-mcf','#7')">+</button>
           </div>
         </div>
       </div>
 
       <div class="menu-card">
         <div class="item-icon">🍌</div>
-        <div class="item-body">
+        <div class="item-body" onclick="openModal('Matcha with Banana Cold Foam',7,'qty-bcf','#8')" style="cursor:pointer;">
           <div class="item-name"><span class="item-num">#8</span> Matcha with Banana Cold Foam</div>
           <div class="item-desc">Iced matcha with whole milk, topped with a creamy banana-infused cold foam. Tropical, smooth, and naturally sweet.</div>
           <span class="item-tag tag-foam">Whole Milk with Foam</span>
@@ -345,14 +353,14 @@ textarea { resize:vertical; min-height:80px; }
           <div class="qty-ctrl">
             <button class="qty-btn minus" onclick="updateCart('Matcha with Banana Cold Foam',-1,7,'qty-bcf')">−</button>
             <span class="qty-num" id="qty-bcf">0</span>
-            <button class="qty-btn plus" onclick="openModal('Matcha with Banana Cold Foam',7,'qty-bcf')">+</button>
+            <button class="qty-btn plus" onclick="openModal('Matcha with Banana Cold Foam',7,'qty-bcf','#8')">+</button>
           </div>
         </div>
       </div>
 
       <div class="menu-card">
         <div class="item-icon">🥥</div>
-        <div class="item-body">
+        <div class="item-body" onclick="openModal('Coconut Water with Matcha Cold Foam',7,'qty-cwf','#9')" style="cursor:pointer;">
           <div class="item-name"><span class="item-num">#9</span> Coconut Water with Matcha Cold Foam</div>
           <div class="item-desc">Light, refreshing coconut water base topped with a silky matcha cold foam. The most unique drink on the menu.</div>
           <span class="item-tag tag-foam">Whole Milk with Foam</span>
@@ -362,7 +370,7 @@ textarea { resize:vertical; min-height:80px; }
           <div class="qty-ctrl">
             <button class="qty-btn minus" onclick="updateCart('Coconut Water with Matcha Cold Foam',-1,7,'qty-cwf')">−</button>
             <span class="qty-num" id="qty-cwf">0</span>
-            <button class="qty-btn plus" onclick="openModal('Coconut Water with Matcha Cold Foam',7,'qty-cwf')">+</button>
+            <button class="qty-btn plus" onclick="openModal('Coconut Water with Matcha Cold Foam',7,'qty-cwf','#9')">+</button>
           </div>
         </div>
       </div>
@@ -443,27 +451,31 @@ textarea { resize:vertical; min-height:80px; }
 
     <!-- Venmo card -->
     <a href="https://venmo.com/u/Josh-Sison-1" target="_blank" style="text-decoration:none;display:block;margin-bottom:12px;">
-      <div style="background:#EAF5FF;border:2px solid #3D95CE;border-radius:18px;padding:20px 22px;display:flex;align-items:center;gap:16px;transition:opacity 0.2s;" onmouseenter="this.style.opacity='.85'" onmouseleave="this.style.opacity='1'">
-        <div style="width:48px;height:48px;background:#3D95CE;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">💙</div>
-        <div style="flex:1;">
-          <div style="font-family:'DM Serif Display',serif;font-size:18px;color:#1a5c8c;">Pay with Venmo</div>
-          <div style="font-size:12px;color:#4a7a9e;margin-top:2px;">@Josh-Sison-1 · Opens the Venmo app</div>
+      <div style="background:#EAF5FF;border:2px solid #008CFF;border-radius:18px;padding:20px 22px;display:flex;align-items:center;gap:16px;transition:opacity 0.2s;" onmouseenter="this.style.opacity='.85'" onmouseleave="this.style.opacity='1'">
+        <div style="width:48px;height:48px;background:#008CFF;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <span style="font-family:'DM Serif Display',serif;font-size:28px;font-weight:700;color:#ffffff;line-height:1;">V</span>
         </div>
-        <div style="font-size:20px;color:#3D95CE;">→</div>
+        <div style="flex:1;">
+          <div style="font-family:'DM Serif Display',serif;font-size:18px;color:#005bbf;">Pay with Venmo</div>
+          <div style="font-size:12px;color:#3a7ab0;margin-top:2px;">@Josh-Sison-1 · Opens the Venmo app</div>
+        </div>
+        <div style="font-size:13px;font-weight:700;color:#008CFF;letter-spacing:0.04em;">Open →</div>
       </div>
     </a>
 
     <!-- Zelle card -->
-    <div style="background:#F3EAFF;border:2px solid #6D1ED4;border-radius:18px;padding:20px 22px;display:flex;align-items:center;gap:16px;cursor:pointer;" onclick="handleZellePay()" id="zelleCard">
-      <div style="width:48px;height:48px;background:#6D1ED4;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">💜</div>
+    <div style="background:#f3eeff;border:2px solid #6E1CD1;border-radius:18px;padding:20px 22px;display:flex;align-items:center;gap:16px;cursor:pointer;" onclick="handleZellePay()" id="zelleCard">
+      <div style="width:48px;height:48px;background:#6E1CD1;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <span style="font-family:'DM Serif Display',serif;font-size:28px;font-weight:700;color:#ffffff;line-height:1;">Z</span>
+      </div>
       <div style="flex:1;">
-        <div style="font-family:'DM Serif Display',serif;font-size:18px;color:#3d0d80;">Pay with Zelle</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:18px;color:#4a0fa8;">Pay with Zelle</div>
         <div style="font-size:12px;color:#7a4aae;margin-top:2px;">747-306-8426 · Tap to copy number</div>
       </div>
-      <div style="font-size:20px;color:#6D1ED4;" id="zelleIcon">📋</div>
+      <div style="font-size:13px;font-weight:700;color:#6E1CD1;" id="zelleIcon">Copy</div>
     </div>
 
-    <div id="zelleCopiedMsg" style="display:none;font-size:12px;color:#6D1ED4;text-align:center;margin-top:8px;font-weight:500;">
+    <div id="zelleCopiedMsg" style="display:none;font-size:12px;color:#6E1CD1;text-align:center;margin-top:8px;font-weight:500;">
       ✓ Copied! Open your Zelle app and send to 747-306-8426
     </div>
 
@@ -502,6 +514,14 @@ textarea { resize:vertical; min-height:80px; }
         <div class="chip" onclick="selectChip('sweetness',this,'Less Sweet')">Less Sweet</div>
         <div class="chip selected" onclick="selectChip('sweetness',this,'Regular Sweetness')">Regular Sweetness</div>
         <div class="chip" onclick="selectChip('sweetness',this,'Extra Sweet')">Extra Sweet</div>
+      </div>
+    </div>
+    <div class="modal-qty-row">
+      <div class="modal-qty-label">Quantity</div>
+      <div class="modal-qty-ctrl">
+        <button class="modal-qty-btn minus" onclick="changeModalQty(-1)">−</button>
+        <div class="modal-qty-num" id="modalQty">1</div>
+        <button class="modal-qty-btn plus"  onclick="changeModalQty(1)">+</button>
       </div>
     </div>
     <button class="modal-add-btn" onclick="addToCartFromModal()">Add to Order →</button>
@@ -590,11 +610,28 @@ function syncCartCounters() {
   });
 }
 
-function openModal(name, price, qtyElId) {
-  modalItem = { name, price, qtyElId };
+function openModal(name, price, qtyElId, itemNum) {
+  // If this drink is already in the cart, check how many sweetness variants exist
+  const existingKeys = Object.keys(cart).filter(k => cart[k].name === name);
+
+  if (existingKeys.length === 1) {
+    // Exactly one sweetness already chosen — just add one more of the same
+    const key = existingKeys[0];
+    cart[key].qty++;
+    const total = Object.values(cart).filter(v=>v.name===name).reduce((s,v)=>s+v.qty,0);
+    const el = document.getElementById(qtyElId);
+    if (el) el.textContent = total;
+    renderCartBar();
+    showToast(`${itemNum ? itemNum + ' ' : ''}${name} added 🍵`);
+    return;
+  }
+
+  // Multiple variants or first time — open the modal to choose sweetness
+  modalItem = { name, price, qtyElId, itemNum };
   modalSweetness = 'Regular Sweetness';
   document.getElementById('modalName').textContent = name;
   document.getElementById('modalPrice').textContent = '$' + price;
+  document.getElementById('modalQty').textContent = '1';
   document.querySelectorAll('#sweetnessChips .chip').forEach(c => c.classList.toggle('selected', c.textContent === 'Regular Sweetness'));
   document.getElementById('modalOverlay').classList.add('open');
 }
@@ -605,19 +642,25 @@ function selectChip(group, el, value) {
   el.classList.add('selected');
   if (group === 'sweetness') modalSweetness = value;
 }
+function changeModalQty(delta) {
+  const el = document.getElementById('modalQty');
+  const cur = parseInt(el.textContent) || 1;
+  el.textContent = Math.max(1, cur + delta);
+}
 function addToCartFromModal() {
   if (!modalItem) return;
-  const { name, price, qtyElId } = modalItem;
+  const { name, price, qtyElId, itemNum } = modalItem;
+  const qty = parseInt(document.getElementById('modalQty').textContent) || 1;
   const key = `${name}||${modalSweetness}`;
   if (!cart[key]) cart[key] = { name, price, qty:0, sweetness:modalSweetness, id:qtyElId };
-  cart[key].qty++;
+  cart[key].qty += qty;
   if (qtyElId) {
     const total = Object.values(cart).filter(v=>v.name===name).reduce((s,v)=>s+v.qty,0);
     const el = document.getElementById(qtyElId);
     if (el) el.textContent = total;
   }
   renderCartBar(); closeModal();
-  showToast(`Added — ${modalSweetness} 🍵`);
+  showToast(`${itemNum ? itemNum + ' ' : ''}${qty > 1 ? qty + '× ' : ''}${name} added 🍵`);
 }
 function updateCart(name, delta, price, qtyElId) {
   if (delta < 0) {
@@ -660,22 +703,64 @@ function buildSummary() {
     row.style.cssText = 'flex-direction:column;align-items:flex-start;gap:4px;';
     row.innerHTML = `
       <div style="display:flex;justify-content:space-between;width:100%;align-items:center;">
-        <span style="font-weight:500;">${qty}× ${name}</span>
-        <div style="display:flex;align-items:center;gap:12px;">
-          <span>$${qty*price}</span>
+        <span style="font-weight:500;flex:1;padding-right:8px;">${name}</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:13px;color:var(--text-soft);" id="sp-${key}">$${qty*price}</span>
           <button onclick="removeFromSummary('${key}')" style="background:none;border:none;cursor:pointer;font-size:15px;color:#cc6666;padding:0;line-height:1;">✕</button>
         </div>
       </div>
-      ${sweetness ? `<div style="font-size:11px;color:var(--text-soft);">${sweetness}</div>` : ''}`;
+      ${sweetness ? `<div style="font-size:11px;color:var(--text-soft);">${sweetness}</div>` : ''}
+      <div style="display:flex;align-items:center;gap:10px;margin-top:2px;">
+        <button onclick="adjustSummaryQty('${key}',-1)" style="width:26px;height:26px;border-radius:50%;border:none;background:var(--cream-dark);color:var(--text-mid);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">−</button>
+        <span style="font-size:14px;font-weight:600;min-width:18px;text-align:center;" id="sq-${key}">${qty}</span>
+        <button onclick="adjustSummaryQty('${key}',1)" style="width:26px;height:26px;border-radius:50%;border:none;background:var(--green-dark);color:var(--cream);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">+</button>
+      </div>`;
     c.appendChild(row);
   });
   document.getElementById('summaryTotal').textContent = '$'+cartTotal();
 }
 
+function adjustSummaryQty(key, delta) {
+  if (!cart[key]) return;
+  const item = cart[key];
+  cart[key].qty = Math.max(0, cart[key].qty + delta);
+  const qtyEl = item.id ? document.getElementById(item.id) : null;
+
+  if (cart[key].qty === 0) {
+    delete cart[key];
+    if (qtyEl) {
+      const remaining = Object.values(cart).filter(v=>v.id===item.id).reduce((s,v)=>s+v.qty,0);
+      qtyEl.textContent = remaining;
+    }
+    renderCartBar();
+    buildSummary();
+    if (!cartCount()) {
+      showToast('Cart is empty — add something first!');
+      showPage('page-menu');
+      syncCartCounters();
+    }
+    return;
+  }
+
+  // Update menu card counter
+  if (qtyEl) {
+    const remaining = Object.values(cart).filter(v=>v.id===item.id).reduce((s,v)=>s+v.qty,0);
+    qtyEl.textContent = remaining;
+  }
+  // Update summary row qty and price
+  const qtyDisplay = document.getElementById('sq-' + key);
+  if (qtyDisplay) qtyDisplay.textContent = cart[key].qty;
+  // Update the price shown next to that item
+  const priceDisplay = document.getElementById('sp-' + key);
+  if (priceDisplay) priceDisplay.textContent = '$' + (cart[key].qty * cart[key].price);
+  renderCartBar();
+  document.getElementById('summaryTotal').textContent = '$' + cartTotal();
+}
+
 function removeFromSummary(key) {
   const item = cart[key];
   if (!item) return;
-  const qtyEl = document.getElementById('qty-' + item.id);
+  const qtyEl = document.getElementById(item.id);
   delete cart[key];
   // Update menu counter
   if (qtyEl) {
@@ -737,8 +822,8 @@ function submitOrder() {
   document.getElementById('payAmount').textContent = '$'+currentOrder.total;
   document.getElementById('orderFormSection').style.display = 'none';
   document.getElementById('paySection').style.display = 'block';
-  document.getElementById('zelleIcon').textContent = '📋';
-  document.getElementById('zelleCard').style.borderColor = '#6D1ED4';
+  document.getElementById('zelleIcon').textContent = 'Copy';
+  document.getElementById('zelleCard').style.borderColor = '#6E1CD1';
   document.getElementById('zelleCopiedMsg').style.display = 'none';
   // Save order so it survives app-switching to Venmo/Zelle
   sessionStorage.setItem('mco_pending_order', JSON.stringify(currentOrder));
@@ -747,7 +832,7 @@ function submitOrder() {
 function handleZellePay() {
   navigator.clipboard.writeText('747-306-8426').catch(()=>{});
   document.getElementById('zelleIcon').textContent = '✓';
-  document.getElementById('zelleCard').style.borderColor = '#4a1ea0';
+  document.getElementById('zelleCard').style.borderColor = '#4a0fa8';
   document.getElementById('zelleCopiedMsg').style.display = 'block';
   showToast('📋 Zelle number copied!');
 }

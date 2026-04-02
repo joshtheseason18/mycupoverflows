@@ -14,7 +14,7 @@
   --green-pale:  #d4e8c8;
   --gold:        #c9a84c;
   --gold-light:  #e8d48a;
-  --cream:       #f2ece0;
+  --cream:       #fef9f0;
   --cream-dark:  #e0d8c4;
   --text:        #2a3828;
   --text-mid:    #5a6e4e;
@@ -27,7 +27,7 @@
 body { font-family:'Jost',sans-serif; background:var(--green-dark); color:var(--text); min-height:100vh; }
 
 /* ── LOCK ── */
-#lockScreen { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; background:var(--cream); padding:40px 24px; text-align:center; }
+#lockScreen { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#fef9f0; padding:40px 24px; text-align:center; }
 .lock-icon  { font-size:52px; margin-bottom:20px; }
 .lock-title { font-family:'DM Serif Display',serif; font-size:32px; color:var(--text); margin-bottom:6px; }
 .lock-sub   { font-size:14px; color:var(--text-mid); margin-bottom:36px; opacity:0.85; }
@@ -41,7 +41,7 @@ body { font-family:'Jost',sans-serif; background:var(--green-dark); color:var(--
 #app { display:none; }
 
 /* ── HERO ── */
-.hero { background:var(--cream); padding:32px 24px 24px; position:relative; overflow:hidden; }
+.hero { background:#fef9f0; padding:32px 24px 24px; position:relative; overflow:hidden; }
 .hero::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse at 50% -20%, rgba(201,168,76,0.1) 0%, transparent 70%); pointer-events:none; }
 .hero-eyebrow { font-size:10px; letter-spacing:0.4em; color:var(--green-dark); text-transform:uppercase; margin-bottom:6px; }
 .hero-title   { font-family:'DM Serif Display',serif; font-size:22px; color:var(--text); margin-bottom:18px; }
@@ -56,7 +56,7 @@ body { font-family:'Jost',sans-serif; background:var(--green-dark); color:var(--
 .profit-num.gold   { color:var(--gold); }
 
 /* ── TOP BAR ── */
-.top-bar { display:flex; justify-content:space-between; align-items:center; padding:10px 16px; background:var(--cream); border-top:1px solid var(--cream-dark); }
+.top-bar { display:flex; justify-content:space-between; align-items:center; padding:10px 16px; background:#fef9f0; border-top:1px solid var(--cream-dark); }
 .logout-btn { font-size:12px; color:var(--text-mid); background:none; border:none; cursor:pointer; }
 .dash-link  { font-size:11px; color:var(--green-dark); background:rgba(45,92,58,0.08); border:1px solid rgba(45,92,58,0.25); border-radius:8px; padding:5px 12px; cursor:pointer; text-decoration:none; }
 
@@ -82,7 +82,7 @@ body { font-family:'Jost',sans-serif; background:var(--green-dark); color:var(--
 .form-row.cols-2 { grid-template-columns:1fr 80px; }
 .form-row.cols-1 { grid-template-columns:1fr; }
 .field-lbl  { font-size:10px; letter-spacing:0.15em; color:var(--text-soft); text-transform:uppercase; margin-bottom:4px; }
-.f-input { width:100%; background:var(--cream); border:1.5px solid var(--cream-dark); border-radius:12px; padding:11px 14px; font-family:'Jost',sans-serif; font-size:14px; color:var(--text); outline:none; transition:border-color 0.2s; }
+.f-input { width:100%; background:#fef9f0; border:1.5px solid var(--cream-dark); border-radius:12px; padding:11px 14px; font-family:'Jost',sans-serif; font-size:14px; color:var(--text); outline:none; transition:border-color 0.2s; }
 .f-input:focus { border-color:var(--green-dark); }
 .f-input::placeholder { color:var(--text-soft); }
 textarea.f-input { resize:vertical; min-height:72px; }
@@ -135,12 +135,59 @@ textarea.f-input { resize:vertical; min-height:72px; }
 .equip-name { font-family:'DM Serif Display',serif; font-size:16px; color:var(--text); margin-bottom:4px; }
 .equip-note { font-size:13px; color:var(--text-mid); line-height:1.6; }
 
-/* ── EMPTY STATE ── */
+/* ── RECIPES ── */
+.recipe-card { background:var(--white); border-radius:16px; margin-bottom:10px; box-shadow:0 4px 20px rgba(0,0,0,0.2); overflow:hidden; }
+.recipe-header { display:flex; align-items:center; gap:12px; padding:14px 16px; cursor:pointer; user-select:none; border-bottom:1px solid transparent; transition:border-color 0.2s; }
+.recipe-card.open .recipe-header { border-bottom-color:var(--cream-dark); }
+.recipe-header:active { opacity:0.85; }
+.recipe-num { font-family:'DM Serif Display',serif; font-size:20px; color:var(--gold); min-width:30px; }
+.recipe-name { font-size:14px; font-weight:600; color:var(--text); flex:1; }
+.recipe-price { font-size:12px; font-weight:600; color:var(--green-dark); }
+.recipe-chevron { font-size:11px; color:var(--text-soft); transition:transform 0.25s; }
+.recipe-card.open .recipe-chevron { transform:rotate(180deg); }
+.recipe-badge { font-size:10px; background:var(--green-pale); color:var(--green-dark); padding:2px 8px; border-radius:20px; font-weight:600; }
+
+.recipe-body { display:none; padding:14px 16px 16px; }
+.recipe-card.open .recipe-body { display:block; }
+
+.rec-col-headers { display:grid; grid-template-columns:1fr 120px 100px 34px; gap:6px; margin-bottom:5px; }
+.rec-col-lbl { font-size:10px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-soft); padding:0 10px; }
+.rec-ing-list { display:flex; flex-direction:column; gap:7px; margin-bottom:12px; }
+.rec-ing-row { display:grid; grid-template-columns:1fr 120px 100px 34px; gap:6px; align-items:center; }
+.rec-input { width:100%; background:var(--cream-dark); border:1.5px solid transparent; border-radius:10px; padding:8px 10px; font-size:13px; color:var(--text); outline:none; font-family:'Jost',sans-serif; transition:border-color 0.2s; }
+.rec-input:focus { border-color:var(--green-dark); background:var(--cream); }
+.rec-input::placeholder { color:var(--text-soft); opacity:0.6; }
+.rec-unit { width:100%; background:var(--cream-dark); border:1.5px solid transparent; border-radius:10px; padding:8px 6px; font-size:13px; color:var(--text); outline:none; font-family:'Jost',sans-serif; cursor:pointer; appearance:none; transition:border-color 0.2s; }
+.rec-unit:focus { border-color:var(--green-dark); }
+.rec-del { width:32px; height:32px; border-radius:50%; border:none; background:#fff0f0; color:#cc3333; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.rec-del:active { background:#ffd5d5; }
+
+/* Amount stepper */
+.rec-stepper { display:flex; align-items:center; gap:0; background:var(--cream-dark); border:1.5px solid transparent; border-radius:10px; overflow:hidden; transition:border-color 0.2s; }
+.rec-stepper:focus-within { border-color:var(--green-dark); background:var(--cream); }
+.rec-step-btn { width:28px; height:36px; background:none; border:none; cursor:pointer; font-size:16px; color:var(--text-mid); flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:background 0.15s; user-select:none; }
+.rec-step-btn:active { background:rgba(45,92,58,0.12); }
+.rec-iamt { background:none; border:none; width:100%; text-align:center; padding:8px 2px; font-size:13px; color:var(--text); outline:none; font-family:'Jost',sans-serif; min-width:0; -moz-appearance:textfield; }
+.rec-iamt::-webkit-inner-spin-button, .rec-iamt::-webkit-outer-spin-button { -webkit-appearance:none; }
+
+/* Autosave indicator */
+.rec-autosave { display:flex; align-items:center; justify-content:flex-end; gap:6px; margin-top:10px; min-height:20px; }
+.rec-autosave-dot { width:7px; height:7px; border-radius:50%; background:var(--cream-dark); transition:background 0.3s; }
+.rec-autosave-dot.saving { background:#e8c46a; }
+.rec-autosave-dot.saved  { background:#4CAF50; }
+.rec-autosave-dot.error  { background:var(--red); }
+.rec-autosave-lbl { font-size:11px; color:var(--text-soft); }
+.rec-notes-lbl { font-size:10px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-soft); margin-bottom:5px; }
+.rec-notes { width:100%; background:var(--cream-dark); border:1.5px solid transparent; border-radius:10px; padding:8px 10px; font-size:13px; color:var(--text); outline:none; resize:none; overflow:hidden; min-height:36px; height:36px; font-family:'Jost',sans-serif; transition:border-color 0.2s; display:block; box-sizing:border-box; }
+.rec-notes:focus { border-color:var(--green-dark); background:var(--cream); }
+.rec-notes::placeholder { color:var(--text-soft); opacity:0.6; }
+.rec-add-btn { display:flex; align-items:center; gap:6px; background:none; border:1.5px dashed var(--cream-dark); border-radius:10px; padding:8px 12px; font-size:13px; color:var(--text-soft); cursor:pointer; width:100%; font-family:'Jost',sans-serif; margin-bottom:12px; }
+.rec-add-btn:active { border-color:var(--green-dark); color:var(--green-dark); }
 .empty { text-align:center; padding:32px 16px; color:rgba(232,212,138,0.6); font-size:13px; line-height:1.7; }
 .empty .e-icon { font-size:32px; margin-bottom:8px; }
 
 /* ── TOAST ── */
-.toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--cream); color:var(--green-dark); border-radius:30px; padding:12px 22px; font-size:14px; font-weight:500; opacity:0; transition:all 0.3s; z-index:600; white-space:nowrap; pointer-events:none; }
+.toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px); background:#fef9f0; color:var(--green-dark); border-radius:30px; padding:12px 22px; font-size:14px; font-weight:500; opacity:0; transition:all 0.3s; z-index:600; white-space:nowrap; pointer-events:none; }
 .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 </style>
 </head>
@@ -192,6 +239,7 @@ textarea.f-input { resize:vertical; min-height:72px; }
     <div class="main-tab active" id="tab-ingredients" onclick="switchTab('ingredients')">🌿 Ingredients</div>
     <div class="main-tab" id="tab-supplies"    onclick="switchTab('supplies')">☕ Supplies</div>
     <div class="main-tab" id="tab-equipment"   onclick="switchTab('equipment')">🔧 Equipment</div>
+    <div class="main-tab" id="tab-recipes"     onclick="switchTab('recipes')">🍵 Recipes</div>
   </div>
 
   <!-- ══ INGREDIENTS ══ -->
@@ -285,6 +333,14 @@ textarea.f-input { resize:vertical; min-height:72px; }
   </div>
 </div>
 
+<!-- ══ RECIPES ══ -->
+<div id="panel-recipes" class="section" style="display:none;">
+  <div style="font-size:12px;color:rgba(232,212,138,0.7);margin-bottom:16px;font-style:italic;">Tap a drink to expand. Changes save to Supabase and sync across all devices.</div>
+  <div id="recipe-list"></div>
+</div>
+
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -319,10 +375,11 @@ function logout() {
 
 // ── TABS ──
 function switchTab(tab) {
-  ['ingredients','supplies','equipment'].forEach(t => {
+  ['ingredients','supplies','equipment','recipes'].forEach(t => {
     document.getElementById('panel-'+t).style.display = t === tab ? 'block' : 'none';
     document.getElementById('tab-'+t).classList.toggle('active', t === tab);
   });
+  if (tab === 'recipes') renderRecipes();
 }
 
 // ── RENDER ALL ──
@@ -553,6 +610,254 @@ function saveEdit() {
   editingType === 'ingredient' ? renderIngredients() : renderSupplies();
   renderProfitBanner();
   showToast('✅ Item updated');
+}
+
+// ── RECIPES ──────────────────────────────────────────────
+
+const RECIPE_DRINKS = [
+  { id:1, name:"Matcha Latte (Oat Milk)",           price:"$6", cat:"🌿 Dairy Free" },
+  { id:2, name:"Mango Matcha Latte (Oat Milk)",     price:"$6", cat:"🌿 Dairy Free" },
+  { id:3, name:"Coconut Matcha",                    price:"$6", cat:"🌿 Dairy Free" },
+  { id:4, name:"Matcha Latte",                      price:"$6", cat:"🥛 Whole Milk" },
+  { id:5, name:"Mango Matcha Latte",                price:"$6", cat:"🥛 Whole Milk" },
+  { id:6, name:"Matcha w/ Vanilla Cold Foam",       price:"$7", cat:"☁️ Foam" },
+  { id:7, name:"Matcha w/ Matcha Cold Foam",        price:"$7", cat:"☁️ Foam" },
+  { id:8, name:"Matcha w/ Banana Cold Foam",        price:"$7", cat:"☁️ Foam" },
+  { id:9, name:"Coconut Water w/ Matcha Cold Foam", price:"$7", cat:"☁️ Foam" },
+];
+
+const REC_DEFAULTS = {
+  1: [{name:"Ceremonial matcha powder",amount:"3.5",unit:"g"},{name:"Oat milk",amount:"110",unit:"ml"},{name:"Hot water (whisking)",amount:"",unit:"ml"},{name:"Sweetener",amount:"",unit:"ml"},{name:"Ice",amount:"",unit:"—"}],
+  2: [{name:"Ceremonial matcha powder",amount:"3.5",unit:"g"},{name:"Oat milk",amount:"110",unit:"ml"},{name:"Mango purée",amount:"",unit:"ml"},{name:"Hot water (whisking)",amount:"",unit:"ml"},{name:"Sweetener",amount:"",unit:"ml"},{name:"Ice",amount:"",unit:"—"}],
+  3: [{name:"Ceremonial matcha powder",amount:"3.5",unit:"g"},{name:"Coconut water",amount:"",unit:"ml"},{name:"Hot water (whisking)",amount:"",unit:"ml"},{name:"Sweetener",amount:"",unit:"ml"},{name:"Ice",amount:"",unit:"—"}],
+  4: [{name:"Ceremonial matcha powder",amount:"3.5",unit:"g"},{name:"Whole milk",amount:"110",unit:"ml"},{name:"Hot water (whisking)",amount:"",unit:"ml"},{name:"Sweetener",amount:"",unit:"ml"},{name:"Ice",amount:"",unit:"—"}],
+  5: [{name:"Ceremonial matcha powder",amount:"3.5",unit:"g"},{name:"Whole milk",amount:"110",unit:"ml"},{name:"Mango purée",amount:"",unit:"ml"},{name:"Hot water (whisking)",amount:"",unit:"ml"},{name:"Sweetener",amount:"",unit:"ml"},{name:"Ice",amount:"",unit:"—"}],
+  6: [{name:"Ceremonial matcha powder",amount:"3.5",unit:"g"},{name:"Whole milk (base)",amount:"110",unit:"ml"},{name:"Whole milk (foam)",amount:"",unit:"ml"},{name:"Vanilla syrup",amount:"",unit:"ml"},{name:"Hot water (whisking)",amount:"",unit:"ml"},{name:"Ice",amount:"",unit:"—"}],
+  7: [{name:"Ceremonial matcha (base)",amount:"3.5",unit:"g"},{name:"Ceremonial matcha (foam)",amount:"",unit:"g"},{name:"Whole milk (base)",amount:"110",unit:"ml"},{name:"Whole milk (foam)",amount:"",unit:"ml"},{name:"Hot water (whisking)",amount:"",unit:"ml"},{name:"Ice",amount:"",unit:"—"}],
+  8: [{name:"Ceremonial matcha powder",amount:"3.5",unit:"g"},{name:"Whole milk (base)",amount:"110",unit:"ml"},{name:"Whole milk (foam)",amount:"",unit:"ml"},{name:"Banana syrup/purée",amount:"",unit:"ml"},{name:"Hot water (whisking)",amount:"",unit:"ml"},{name:"Ice",amount:"",unit:"—"}],
+  9: [{name:"Ceremonial matcha (foam)",amount:"",unit:"g"},{name:"Coconut water",amount:"",unit:"ml"},{name:"Whole milk (foam)",amount:"",unit:"ml"},{name:"Hot water (whisking)",amount:"",unit:"ml"},{name:"Ice",amount:"",unit:"—"}],
+};
+
+const REC_UNITS = ['ml','oz','g','tsp','tbsp','cups','pumps','—'];
+let recipeData = {}; // drink_id -> { ingredients, notes, loaded }
+
+async function sbFetchRecipe(drinkId) {
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/recipes?drink_id=eq.${drinkId}&select=*`,
+      { headers:{ 'apikey':SUPABASE_KEY, 'Authorization':'Bearer '+SUPABASE_KEY } }
+    );
+    const data = await res.json();
+    return data && data.length ? data[0] : null;
+  } catch(e) { return null; }
+}
+
+async function sbSaveRecipe(drinkId, drinkName, ingredients, notes) {
+  const body = JSON.stringify({ drink_id:drinkId, drink_name:drinkName, ingredients, notes, updated_at:new Date().toISOString() });
+  // Check if exists
+  const existing = await sbFetchRecipe(drinkId);
+  const url = existing
+    ? `${SUPABASE_URL}/rest/v1/recipes?drink_id=eq.${drinkId}`
+    : `${SUPABASE_URL}/rest/v1/recipes`;
+  const method = existing ? 'PATCH' : 'POST';
+  const res = await fetch(url, {
+    method,
+    headers:{ 'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json','Prefer':'return=minimal' },
+    body
+  });
+  return res.ok;
+}
+
+function renderRecipes() {
+  const el = document.getElementById('recipe-list');
+  el.innerHTML = '';
+  let lastCat = null;
+
+  RECIPE_DRINKS.forEach(drink => {
+    if (drink.cat !== lastCat) {
+      lastCat = drink.cat;
+      const lbl = document.createElement('div');
+      lbl.style.cssText = 'font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:rgba(232,212,138,0.65);margin:20px 0 8px;';
+      lbl.textContent = drink.cat;
+      el.appendChild(lbl);
+    }
+
+    const data = recipeData[drink.id] || { ingredients: REC_DEFAULTS[drink.id] || [], notes:'' };
+    const card = document.createElement('div');
+    card.className = 'recipe-card';
+    card.id = 'rcard-' + drink.id;
+    card.innerHTML = `
+      <div class="recipe-header" onclick="toggleRecipe(${drink.id})">
+        <div class="recipe-num">#${drink.id}</div>
+        <div class="recipe-name">${drink.name}</div>
+        <div class="recipe-price">${drink.price}</div>
+        <span class="recipe-badge" id="rbadge-${drink.id}">${data.ingredients.length} ingredients</span>
+        <div class="recipe-chevron">▼</div>
+      </div>
+      <div class="recipe-body">
+        <div class="rec-col-headers">
+          <div class="rec-col-lbl">Ingredient</div>
+          <div class="rec-col-lbl">Amount</div>
+          <div class="rec-col-lbl">Unit</div>
+          <div></div>
+        </div>
+        <div class="rec-ing-list" id="rlist-${drink.id}"></div>
+        <button class="rec-add-btn" onclick="recAddRow(${drink.id})">+ Add ingredient</button>
+        <div class="rec-notes-lbl">Notes / technique</div>
+        <textarea class="rec-notes" id="rnotes-${drink.id}" placeholder="e.g. whisk order, layering, technique tips...">${escHtml(data.notes || '')}</textarea>
+        <div class="rec-autosave">
+          <div class="rec-autosave-dot" id="rdot-${drink.id}"></div>
+          <span class="rec-autosave-lbl" id="rlbl-${drink.id}">Changes autosave</span>
+        </div>
+      </div>
+    `;
+    el.appendChild(card);
+
+    // Fill rows and wire autosave
+    const list = card.querySelector('#rlist-' + drink.id);
+    const notesEl = card.querySelector('#rnotes-' + drink.id);
+    data.ingredients.forEach(ing => {
+      const row = makeRecRow(ing, drink.id);
+      list.appendChild(row);
+      wireAutosave(row, drink.id);
+    });
+    if (notesEl) {
+      notesEl.addEventListener('input', () => { autoGrow(notesEl); scheduleAutosave(drink.id); });
+      autoGrow(notesEl);
+    }
+  });
+}
+
+function toggleRecipe(id) {
+  const card = document.getElementById('rcard-' + id);
+  card.classList.toggle('open');
+  // Lazy load from Supabase on first open
+  if (card.classList.contains('open') && !recipeData[id]) {
+    loadRecipeFromSupabase(id);
+  }
+}
+
+async function loadRecipeFromSupabase(drinkId) {
+  const row = await sbFetchRecipe(drinkId);
+  if (row && row.ingredients && row.ingredients.length) {
+    recipeData[drinkId] = { ingredients: row.ingredients, notes: row.notes || '' };
+    const list = document.getElementById('rlist-' + drinkId);
+    if (list) {
+      list.innerHTML = '';
+      row.ingredients.forEach(ing => {
+        const r = makeRecRow(ing, drinkId);
+        list.appendChild(r);
+        wireAutosave(r, drinkId);
+      });
+    }
+    const notesEl = document.getElementById('rnotes-' + drinkId);
+    if (notesEl) {
+      notesEl.value = row.notes || '';
+      notesEl.addEventListener('input', () => { autoGrow(notesEl); scheduleAutosave(drinkId); });
+      autoGrow(notesEl);
+    }
+    const badge = document.getElementById('rbadge-' + drinkId);
+    if (badge) badge.textContent = row.ingredients.length + ' ingredients';
+  }
+}
+
+function makeRecRow(ing, drinkId) {
+  const row = document.createElement('div');
+  row.className = 'rec-ing-row';
+  const opts = REC_UNITS.map(u => `<option value="${u}" ${(ing.unit||'ml')===u?'selected':''}>${u}</option>`).join('');
+  row.innerHTML = `
+    <input class="rec-input rec-iname" type="text" placeholder="Ingredient" value="${escHtml(ing.name||'')}"/>
+    <div class="rec-stepper">
+      <button class="rec-step-btn" onclick="stepAmt(this,-1)">−</button>
+      <input class="rec-iamt" type="number" placeholder="0" step="0.1" min="0" value="${escHtml(ing.amount||'')}"/>
+      <button class="rec-step-btn" onclick="stepAmt(this,1)">+</button>
+    </div>
+    <select class="rec-unit">${opts}</select>
+    <button class="rec-del" onclick="recDelRow(this)">×</button>
+  `;
+  return row;
+}
+
+function stepAmt(btn, delta) {
+  const input = btn.closest('.rec-stepper').querySelector('.rec-iamt');
+  const step  = 0.1;
+  const cur   = parseFloat(input.value) || 0;
+  input.value = Math.max(0, Math.round((cur + delta * step) * 10) / 10);
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+function recDelRow(btn) {
+  const row = btn.closest('.rec-ing-row');
+  const card = btn.closest('.recipe-card');
+  row.remove();
+  const id = parseInt(card.id.replace('rcard-',''));
+  scheduleAutosave(id);
+}
+
+// ── AUTOSAVE ──────────────────────────────────────────
+const autoSaveTimers = {};
+
+function scheduleAutosave(drinkId) {
+  clearTimeout(autoSaveTimers[drinkId]);
+  setDot(drinkId, 'saving', 'Saving…');
+  autoSaveTimers[drinkId] = setTimeout(() => doAutosave(drinkId), 1000);
+}
+
+function setDot(drinkId, state, label) {
+  const dot = document.getElementById('rdot-' + drinkId);
+  const lbl = document.getElementById('rlbl-' + drinkId);
+  if (dot) { dot.className = 'rec-autosave-dot ' + state; }
+  if (lbl) lbl.textContent = label;
+}
+
+async function doAutosave(drinkId) {
+  const drink = RECIPE_DRINKS.find(d => d.id === drinkId);
+  if (!drink) return;
+
+  const rows = document.querySelectorAll(`#rlist-${drinkId} .rec-ing-row`);
+  const ingredients = [];
+  rows.forEach(row => {
+    const name   = row.querySelector('.rec-iname').value.trim();
+    const amount = row.querySelector('.rec-iamt').value;
+    const unit   = row.querySelector('.rec-unit').value;
+    if (name || amount) ingredients.push({ name, amount, unit });
+  });
+  const notesEl = document.getElementById('rnotes-' + drinkId);
+  const notes   = notesEl ? notesEl.value.trim() : '';
+
+  recipeData[drinkId] = { ingredients, notes };
+
+  const badge = document.getElementById('rbadge-' + drinkId);
+  if (badge) badge.textContent = ingredients.length + ' ingredients';
+
+  const ok = await sbSaveRecipe(drinkId, drink.name, ingredients, notes);
+  setDot(drinkId, ok ? 'saved' : 'error', ok ? 'Saved ✓' : 'Save failed');
+  if (ok) setTimeout(() => setDot(drinkId, '', 'Changes autosave'), 2500);
+}
+
+// Wire autosave listeners after row is inserted
+function wireAutosave(row, drinkId) {
+  row.querySelectorAll('input, select').forEach(el => {
+    el.addEventListener('input',  () => scheduleAutosave(drinkId));
+    el.addEventListener('change', () => scheduleAutosave(drinkId));
+  });
+}
+
+function recAddRow(drinkId) {
+  const list = document.getElementById('rlist-' + drinkId);
+  const row  = makeRecRow({ name:'', amount:'', unit:'ml' }, drinkId);
+  list.appendChild(row);
+  wireAutosave(row, drinkId);
+  row.querySelector('.rec-iname').focus();
+}
+
+function autoGrow(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
+function escHtml(str) {
+  return (str||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 // ── TOAST ──
