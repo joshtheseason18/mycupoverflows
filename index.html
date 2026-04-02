@@ -22,7 +22,7 @@
   --white:       #fdfaf5;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-body { font-family:'Jost',sans-serif; background:var(--green-dark); color:var(--text); min-height:100vh; overflow-x:hidden; }
+body { font-family:'Jost',sans-serif; background:var(--green-dark); color:var(--text); min-height:100vh; overflow-x:hidden; touch-action:manipulation; }
 
 .page { display:none; min-height:100vh; }
 .page.active { display:block; }
@@ -541,6 +541,61 @@ let currentOrder = null;
 let modalItem = null;
 let modalSweetness = 'Regular Sweetness';
 
+// ── PERSIST STATE ACROSS REFRESH ──────────────────────
+function saveState() {
+  try {
+    const state = {
+      cart,
+      selectedSlot,
+      firstName: document.getElementById('custFirstName')?.value || '',
+      lastName:  document.getElementById('custLastName')?.value  || '',
+      phone:     document.getElementById('custPhone')?.value     || '',
+      notes:     document.getElementById('custNotes')?.value     || '',
+    };
+    localStorage.setItem('mco_cart_state', JSON.stringify(state));
+  } catch(e) {}
+}
+
+function clearState() {
+  localStorage.removeItem('mco_cart_state');
+}
+
+function restoreState() {
+  try {
+    const raw = localStorage.getItem('mco_cart_state');
+    if (!raw) return false;
+    const state = JSON.parse(raw);
+    if (!state.cart || !Object.keys(state.cart).length) return false;
+
+    cart = state.cart;
+    selectedSlot = state.selectedSlot || '';
+
+    // Restore form fields
+    const fn = document.getElementById('custFirstName');
+    const ln = document.getElementById('custLastName');
+    const ph = document.getElementById('custPhone');
+    const no = document.getElementById('custNotes');
+    if (fn) fn.value = state.firstName || '';
+    if (ln) ln.value = state.lastName  || '';
+    if (ph) ph.value = state.phone     || '';
+    if (no) no.value = state.notes     || '';
+
+    // Restore slot highlight
+    if (selectedSlot) {
+      document.querySelectorAll('.slot').forEach(s => {
+        if (s.dataset.slot === selectedSlot) s.classList.add('selected');
+      });
+    }
+
+    renderCartBar();
+    syncCartCounters();
+    return true;
+  } catch(e) {
+    clearState();
+    return false;
+  }
+}
+
 // ── SUPABASE HELPERS ──
 async function supabaseInsert(data) {
   try {
@@ -622,6 +677,7 @@ function openModal(name, price, qtyElId, itemNum) {
     const el = document.getElementById(qtyElId);
     if (el) el.textContent = total;
     renderCartBar();
+    saveState();
     showToast(`${itemNum ? itemNum + ' ' : ''}${name} added 🍵`);
     return;
   }
@@ -660,6 +716,7 @@ function addToCartFromModal() {
     if (el) el.textContent = total;
   }
   renderCartBar(); closeModal();
+  saveState();
   showToast(`${itemNum ? itemNum + ' ' : ''}${qty > 1 ? qty + '× ' : ''}${name} added 🍵`);
 }
 function updateCart(name, delta, price, qtyElId) {
@@ -673,6 +730,7 @@ function updateCart(name, delta, price, qtyElId) {
     const el = document.getElementById(qtyElId);
     if (el) el.textContent = total;
     renderCartBar();
+    saveState();
   }
 }
 function cartTotal() { return Object.values(cart).reduce((s,v)=>s+v.qty*v.price,0); }
@@ -754,6 +812,7 @@ function adjustSummaryQty(key, delta) {
   const priceDisplay = document.getElementById('sp-' + key);
   if (priceDisplay) priceDisplay.textContent = '$' + (cart[key].qty * cart[key].price);
   renderCartBar();
+  saveState();
   document.getElementById('summaryTotal').textContent = '$' + cartTotal();
 }
 
@@ -769,6 +828,7 @@ function removeFromSummary(key) {
   }
   renderCartBar();
   buildSummary();
+  saveState();
   // If cart is now empty go back to menu
   if (!cartCount()) {
     showToast('Cart is empty — add something first!');
@@ -794,6 +854,7 @@ function selectSlot(el, slot) {
   el.classList.add('selected');
   selectedSlot = slot;
   document.getElementById('slot-error').style.display = 'none';
+  saveState();
 }
 function submitOrder() {
   const firstName = document.getElementById('custFirstName').value.trim();
@@ -848,6 +909,7 @@ async function confirmOrder() {
   }
   // Clear saved order state
   sessionStorage.removeItem('mco_pending_order');
+  clearState();
   logToSheets(currentOrder);
   const itemLines = currentOrder.items.split(', ').map(i =>
     `<div class="confirm-row"><span>${i}</span></div>`
@@ -876,7 +938,7 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2800);
 }
 window.addEventListener('load', () => {
-  // Restore pending order if customer left to pay and came back
+  // Restore pending payment if customer left to pay and came back
   const saved = sessionStorage.getItem('mco_pending_order');
   if (saved) {
     try {
@@ -890,7 +952,20 @@ window.addEventListener('load', () => {
     } catch(e) {
       sessionStorage.removeItem('mco_pending_order');
     }
+  } else {
+    // Restore cart + form from localStorage if they refreshed mid-order
+    restoreState();
+    if (Object.keys(cart).length) {
+      showPage('page-menu');
+      showToast('Your cart was restored 🍵');
+    }
   }
+
+  // Wire saveState to all form inputs so any change is persisted
+  ['custFirstName','custLastName','custPhone','custNotes'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', saveState);
+  });
 
   // Splash: dismiss when video ends, show skip after 1.5s
   const video = document.getElementById('splashVideo');
