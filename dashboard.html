@@ -686,7 +686,10 @@ const ITEM_NUMBERS = {
 
 function getItemNumber(nameStr) {
   const clean = nameStr.toLowerCase().trim();
-  for (const [key, num] of Object.entries(ITEM_NUMBERS)) {
+  // Sort longest keys first so specific names (e.g. "mango matcha latte (df)")
+  // match before shorter ones (e.g. "matcha latte (df)")
+  const sorted = Object.entries(ITEM_NUMBERS).sort((a, b) => b[0].length - a[0].length);
+  for (const [key, num] of sorted) {
     if (clean.includes(key)) return num;
   }
   return '';
