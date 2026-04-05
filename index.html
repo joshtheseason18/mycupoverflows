@@ -205,7 +205,7 @@ textarea { resize:vertical; min-height:80px; }
       <span>Sunday, April 5 · 9:45–10:20am &amp; 12:00–1:00pm</span>
     </div>
     <div style="margin-top:12px;background:rgba(45,92,58,0.08);border:1px solid rgba(45,92,58,0.2);border-radius:12px;padding:10px 18px;font-size:12px;color:var(--green-dark);line-height:1.8;">
-      ⏰ Pre-orders for pick-up Before Service closes Saturday, April 4 at 11:59pm
+      ⏰ Pre-orders are now closed — thank you for your support! 🍵
     </div>
   </div>
   <div class="tab-bar">
@@ -988,29 +988,19 @@ window.addEventListener('load', () => {
   }
 
   initSlots();
-  const now = new Date();
-  const morningCutoff   = new Date('2026-04-05T00:00:00'); // midnight Sat→Sun
-  const afternoonCutoff = new Date('2026-04-05T13:00:00'); // 1:00pm Sunday
 
-  // After 1pm Sunday — block all ordering
-  if (now >= afternoonCutoff) {
-    const orderTab = document.querySelector('.tab[onclick="showTab(\'order\')"]');
-    if (orderTab) {
-      orderTab.onclick = () => showToast('⏰ Pre-orders are now closed. See you next time!');
-      orderTab.style.opacity = '0.5';
-    }
-    document.getElementById('cartBar').querySelector('.cart-btn').onclick = () =>
-      showToast('⏰ Pre-orders are now closed. See you next time!');
+  // ── All pre-ordering closed ──
+  const orderTab = document.querySelector('.tab[onclick="showTab(\'order\')"]');
+  if (orderTab) {
+    orderTab.onclick = () => showToast('⏰ Pre-orders are now closed. See you next time!');
+    orderTab.style.opacity = '0.5';
   }
-  // After midnight Saturday — disable morning slot only, afternoon still open
-  else if (now >= morningCutoff) {
-    const morningSlot = document.getElementById('slot-morning');
-    if (morningSlot) {
-      morningSlot.classList.add('disabled');
-      morningSlot.onclick = null;
-      document.getElementById('morning-cutoff').textContent = 'Closed';
-    }
-  }
+  document.getElementById('cartBar').querySelector('.cart-btn').onclick = () =>
+    showToast('⏰ Pre-orders are now closed. See you next time!');
+
+  // Hide quantity buttons so people can't add to cart
+  document.querySelectorAll('.qty-ctrl, .qty-btn').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.menu-card .item-body').forEach(el => { el.style.cursor = 'default'; el.onclick = null; });
 });
 
 function formatPhone(input) {
