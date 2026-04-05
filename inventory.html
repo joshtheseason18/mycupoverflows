@@ -152,10 +152,14 @@ textarea.f-input { resize:vertical; min-height:72px; }
 .recipe-body { display:none; padding:14px 16px 16px; }
 .recipe-card.open .recipe-body { display:block; }
 
-.rec-col-headers { display:grid; grid-template-columns:1fr 120px 100px 34px; gap:6px; margin-bottom:5px; }
+.rec-col-headers { display:grid; grid-template-columns:20px 1fr 120px 100px 34px; gap:6px; margin-bottom:5px; }
 .rec-col-lbl { font-size:10px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-soft); padding:0 10px; }
 .rec-ing-list { display:flex; flex-direction:column; gap:7px; margin-bottom:12px; }
-.rec-ing-row { display:grid; grid-template-columns:1fr 120px 100px 34px; gap:6px; align-items:center; }
+.rec-ing-row { display:grid; grid-template-columns:20px 1fr 120px 100px 34px; gap:6px; align-items:center; }
+.rec-drag-handle { display:flex; align-items:center; justify-content:center; cursor:grab; color:var(--text-soft); font-size:14px; opacity:0.5; touch-action:none; user-select:none; padding:4px 0; }
+.rec-drag-handle:active { cursor:grabbing; opacity:1; }
+.rec-ing-row.dragging { opacity:0.4; background:var(--cream-dark); border-radius:10px; }
+.rec-ing-row.drag-over { border-top:2px solid var(--green-dark); margin-top:-2px; }
 .rec-input { width:100%; background:var(--cream-dark); border:1.5px solid transparent; border-radius:10px; padding:8px 10px; font-size:13px; color:var(--text); outline:none; font-family:'Jost',sans-serif; transition:border-color 0.2s; }
 .rec-input:focus { border-color:var(--green-dark); background:var(--cream); }
 .rec-input::placeholder { color:var(--text-soft); opacity:0.6; }
@@ -187,6 +191,55 @@ textarea.f-input { resize:vertical; min-height:72px; }
 .rec-add-btn:active { border-color:var(--green-dark); color:var(--green-dark); }
 .empty { text-align:center; padding:32px 16px; color:rgba(232,212,138,0.6); font-size:13px; line-height:1.7; }
 .empty .e-icon { font-size:32px; margin-bottom:8px; }
+
+/* ── SUB-RECIPE (BASE RECIPES) ── */
+.sub-recipe-card { background:var(--white); border-radius:16px; margin-bottom:10px; box-shadow:0 4px 20px rgba(0,0,0,0.2); overflow:hidden; border-left:4px solid var(--gold); }
+.sub-recipe-card.open .recipe-body { display:block; }
+.sub-recipe-card .recipe-header { border-bottom:1px solid transparent; }
+.sub-recipe-card.open .recipe-header { border-bottom-color:var(--cream-dark); }
+.sub-recipe-name-input { background:none; border:none; font-family:'DM Serif Display',serif; font-size:15px; color:var(--text); outline:none; flex:1; padding:4px 0; }
+.sub-recipe-name-input::placeholder { color:var(--text-soft); }
+
+.rec-sub-row { display:grid; grid-template-columns:20px 1fr 120px 100px 34px; gap:6px; align-items:center; background:rgba(201,168,76,0.08); border-radius:10px; padding:2px 0; border:1px dashed var(--gold-light); }
+.rec-sub-label { font-size:13px; color:var(--gold); font-weight:600; padding:8px 10px; display:flex; align-items:center; gap:4px; }
+.rec-insert-btn { display:flex; align-items:center; gap:6px; background:rgba(201,168,76,0.1); border:1.5px dashed var(--gold); border-radius:10px; padding:8px 12px; font-size:13px; color:var(--gold); cursor:pointer; font-family:'Jost',sans-serif; }
+.rec-insert-btn:active { background:rgba(201,168,76,0.2); }
+.sub-picker { position:relative; display:inline-block; }
+.sub-picker-menu { position:absolute; bottom:100%; left:0; background:var(--white); border:1.5px solid var(--cream-dark); border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.15); z-index:100; min-width:220px; padding:6px; display:none; margin-bottom:4px; }
+.sub-picker-menu.open { display:block; }
+.sub-picker-item { padding:10px 12px; font-size:13px; color:var(--text); cursor:pointer; border-radius:8px; }
+.sub-picker-item:hover { background:var(--cream); }
+.sub-picker-empty { padding:10px 12px; font-size:12px; color:var(--text-soft); font-style:italic; }
+
+/* ── SHOPPING LIST ── */
+.quick-btn { padding:6px 12px; font-size:12px; font-weight:600; background:var(--white); border:1.5px solid var(--cream-dark); border-radius:8px; cursor:pointer; color:var(--text-mid); font-family:'Jost',sans-serif; transition:all 0.15s; }
+.quick-btn:active, .quick-btn.active { background:var(--green-dark); color:var(--cream); border-color:var(--green-dark); }
+.order-row { display:grid; grid-template-columns:1fr 68px 68px; gap:6px; align-items:center; padding:8px 0; border-bottom:1px solid var(--cream-dark); }
+.order-row:last-child { border-bottom:none; }
+.order-drink-name { font-size:13px; color:var(--text); line-height:1.3; }
+.order-drink-num { font-size:11px; color:var(--gold); font-weight:700; font-family:'DM Serif Display',serif; }
+.order-input { width:100%; background:var(--cream); border:1.5px solid var(--cream-dark); border-radius:10px; padding:8px 4px; font-size:15px; font-weight:600; text-align:center; color:var(--text); font-family:'Jost',sans-serif; outline:none; }
+.order-input:focus { border-color:var(--green-dark); }
+.order-input.walkin { border-color:var(--gold-light); background:#fffaf0; }
+
+.shop-card { background:var(--white); border-radius:16px; padding:14px 16px; margin-bottom:8px; box-shadow:0 4px 20px rgba(0,0,0,0.2); }
+.shop-card.got-it { opacity:0.45; }
+.shop-ing-name { font-family:'DM Serif Display',serif; font-size:16px; color:var(--text); margin-bottom:6px; }
+.shop-raw { font-size:12px; color:var(--text-mid); margin-bottom:8px; }
+.shop-container-row { display:grid; grid-template-columns:90px 70px 1fr; gap:6px; align-items:center; margin-bottom:6px; }
+.shop-result { display:flex; justify-content:space-between; align-items:center; padding-top:8px; border-top:1px solid var(--cream-dark); margin-top:8px; }
+.shop-buy-num { font-family:'DM Serif Display',serif; font-size:22px; color:var(--green-dark); }
+.shop-buy-cost { font-size:14px; font-weight:600; color:var(--gold); }
+.shop-check { width:22px; height:22px; accent-color:var(--green-dark); cursor:pointer; }
+
+.sup-card { background:var(--white); border-radius:16px; padding:14px 16px; margin-bottom:8px; box-shadow:0 4px 20px rgba(0,0,0,0.2); display:flex; justify-content:space-between; align-items:center; }
+.sup-card.got-it { opacity:0.45; }
+.sup-info { flex:1; }
+.sup-name { font-family:'DM Serif Display',serif; font-size:15px; color:var(--text); }
+.sup-detail { font-size:12px; color:var(--text-mid); margin-top:2px; }
+.sup-buy { text-align:right; }
+.sup-buy-num { font-family:'DM Serif Display',serif; font-size:20px; color:var(--green-dark); }
+.sup-buy-cost { font-size:13px; color:var(--gold); }
 
 /* ── TOAST ── */
 .toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px); background:#fef9f0; color:var(--green-dark); border-radius:30px; padding:12px 22px; font-size:14px; font-weight:500; opacity:0; transition:all 0.3s; z-index:600; white-space:nowrap; pointer-events:none; }
@@ -222,7 +275,7 @@ textarea.f-input { resize:vertical; min-height:72px; }
         <div class="profit-num green" id="p-revenue">$0</div>
       </div>
       <div class="profit-card">
-        <div class="profit-label">Inv. Cost</div>
+        <div class="profit-label">Est. Cost</div>
         <div class="profit-num red" id="p-cost">$0</div>
       </div>
       <div class="profit-card">
@@ -238,62 +291,78 @@ textarea.f-input { resize:vertical; min-height:72px; }
 
   <!-- Tabs -->
   <div class="main-tabs">
-    <div class="main-tab active" id="tab-ingredients" onclick="switchTab('ingredients')">🌿 Ingredients</div>
-    <div class="main-tab" id="tab-supplies"    onclick="switchTab('supplies')">☕ Supplies</div>
-    <div class="main-tab" id="tab-equipment"   onclick="switchTab('equipment')">🔧 Equipment</div>
+    <div class="main-tab active" id="tab-shopping" onclick="switchTab('shopping')">🛒 Shopping</div>
     <div class="main-tab" id="tab-recipes"     onclick="switchTab('recipes')">🍵 Recipes</div>
+    <div class="main-tab" id="tab-equipment"   onclick="switchTab('equipment')">🔧 Equipment</div>
   </div>
 
-  <!-- ══ INGREDIENTS ══ -->
-  <div id="panel-ingredients" class="section">
-    <div class="stats-row">
-      <div class="stat-card"><div class="stat-num" id="ing-count">0</div><div class="stat-lbl">Items</div></div>
-      <div class="stat-card"><div class="stat-num" id="ing-cost">$0</div><div class="stat-lbl">Total Cost</div></div>
-      <div class="stat-card"><div class="stat-num" id="ing-low">0</div><div class="stat-lbl">⚠️ Low</div></div>
+  <!-- ══ SHOPPING LIST ══ -->
+  <div id="panel-shopping" class="section">
+    <!-- Order Counts -->
+    <div style="font-size:12px;color:rgba(232,212,138,0.7);margin-bottom:12px;font-style:italic;">
+      Enter pre-order counts + walk-in estimates. Shopping list auto-calculates from your Recipes tab.
     </div>
-    <div class="add-form">
-      <div class="form-title">Add Ingredient</div>
-      <div class="form-row cols-3">
-        <div><div class="field-lbl">Name *</div><input class="f-input" id="i-name" placeholder="e.g. Oat Milk"/></div>
-        <div><div class="field-lbl">Cost $</div><input class="f-input" id="i-cost" type="number" min="0" step="0.01" placeholder="4.99"/></div>
-        <div><div class="field-lbl">Qty</div><input class="f-input" id="i-qty" type="number" min="0" placeholder="6"/></div>
-      </div>
-      <div class="form-row cols-2">
-        <div><div class="field-lbl">Unit</div><input class="f-input" id="i-unit" placeholder="cartons, oz, lbs…"/></div>
-        <div><div class="field-lbl">Alert at</div><input class="f-input" id="i-low" type="number" min="0" placeholder="2"/></div>
-      </div>
-      <div class="form-row cols-1">
-        <div><div class="field-lbl">Notes</div><textarea class="f-input" id="i-notes" placeholder="e.g. Buy at Trader Joe's, keep refrigerated, expires soon…" rows="2"></textarea></div>
-      </div>
-      <button class="add-btn" onclick="addItem('ingredient')">+ Add Ingredient</button>
-    </div>
-    <div id="list-ingredients"></div>
-  </div>
 
-  <!-- ══ SUPPLIES ══ -->
-  <div id="panel-supplies" class="section" style="display:none;">
     <div class="stats-row">
-      <div class="stat-card"><div class="stat-num" id="sup-count">0</div><div class="stat-lbl">Items</div></div>
-      <div class="stat-card"><div class="stat-num" id="sup-cost">$0</div><div class="stat-lbl">Total Cost</div></div>
-      <div class="stat-card"><div class="stat-num" id="sup-low">0</div><div class="stat-lbl">⚠️ Low</div></div>
+      <div class="stat-card"><div class="stat-num" id="shop-preorders">0</div><div class="stat-lbl">Pre-orders</div></div>
+      <div class="stat-card"><div class="stat-num" id="shop-walkins">0</div><div class="stat-lbl">Walk-ins</div></div>
+      <div class="stat-card"><div class="stat-num" id="shop-total">0</div><div class="stat-lbl">Total Drinks</div></div>
     </div>
-    <div class="add-form">
-      <div class="form-title">Add Supply</div>
+
+    <!-- Quick fill walk-ins -->
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:14px;flex-wrap:wrap;">
+      <span style="font-size:11px;color:var(--text-soft);white-space:nowrap;">Quick-fill walk-ins:</span>
+      <button class="quick-btn" onclick="quickFillWalkins(0)">0</button>
+      <button class="quick-btn" onclick="quickFillWalkins(2)">2</button>
+      <button class="quick-btn" onclick="quickFillWalkins(3)">3</button>
+      <button class="quick-btn" onclick="quickFillWalkins(5)">5</button>
+      <button class="quick-btn" onclick="quickFillWalkins(10)">10</button>
+    </div>
+
+    <!-- Drink order rows -->
+    <div class="add-form" style="padding:14px 12px;">
+      <div style="display:grid;grid-template-columns:1fr 68px 68px;gap:6px;margin-bottom:8px;">
+        <div class="field-lbl">Drink</div>
+        <div class="field-lbl" style="text-align:center;">Pre-order</div>
+        <div class="field-lbl" style="text-align:center;">Walk-in</div>
+      </div>
+      <div id="order-rows"></div>
+    </div>
+
+    <!-- Buffer -->
+    <div style="display:flex;align-items:center;gap:8px;margin:16px 0 10px;flex-wrap:wrap;">
+      <span style="font-size:12px;color:var(--text-soft);">Safety buffer:</span>
+      <button class="quick-btn" onclick="setBuffer(0)">0%</button>
+      <button class="quick-btn active" onclick="setBuffer(10)">10%</button>
+      <button class="quick-btn" onclick="setBuffer(15)">15%</button>
+      <button class="quick-btn" onclick="setBuffer(20)">20%</button>
+    </div>
+
+    <!-- Generated Shopping List -->
+    <div style="font-family:'DM Serif Display',serif;font-size:18px;color:var(--cream);margin:20px 0 10px;">Shopping List</div>
+    <div id="shopping-list"></div>
+
+    <!-- Extra Supplies -->
+    <div style="font-family:'DM Serif Display',serif;font-size:18px;color:var(--cream);margin:24px 0 10px;">Extra Supplies</div>
+    <div class="add-form" style="padding:14px;">
       <div class="form-row cols-3">
-        <div><div class="field-lbl">Name *</div><input class="f-input" id="s-name" placeholder="e.g. 16oz Cups"/></div>
-        <div><div class="field-lbl">Cost $</div><input class="f-input" id="s-cost" type="number" min="0" step="0.01" placeholder="12.99"/></div>
-        <div><div class="field-lbl">Qty</div><input class="f-input" id="s-qty" type="number" min="0" placeholder="100"/></div>
+        <div><div class="field-lbl">Item *</div><input class="f-input" id="sup-name" placeholder="e.g. 16oz Cups"/></div>
+        <div><div class="field-lbl">Need</div><input class="f-input" id="sup-need" type="number" min="0" placeholder="50"/></div>
+        <div><div class="field-lbl">Per pkg</div><input class="f-input" id="sup-perpkg" type="number" min="1" placeholder="25"/></div>
       </div>
       <div class="form-row cols-2">
-        <div><div class="field-lbl">Unit</div><input class="f-input" id="s-unit" placeholder="pieces, packs, boxes…"/></div>
-        <div><div class="field-lbl">Alert at</div><input class="f-input" id="s-low" type="number" min="0" placeholder="20"/></div>
+        <div><div class="field-lbl">Pkg price $</div><input class="f-input" id="sup-price" type="number" min="0" step="0.01" placeholder="8.99"/></div>
+        <div><div class="field-lbl">Notes</div><input class="f-input" id="sup-notes" placeholder="Amazon, etc."/></div>
       </div>
-      <div class="form-row cols-1">
-        <div><div class="field-lbl">Notes</div><textarea class="f-input" id="s-notes" placeholder="e.g. Ordered from Amazon, restock link…" rows="2"></textarea></div>
-      </div>
-      <button class="add-btn" onclick="addItem('supply')">+ Add Supply</button>
+      <button class="add-btn" onclick="addSupply()">+ Add Supply</button>
     </div>
-    <div id="list-supplies"></div>
+    <div id="supply-list"></div>
+
+    <!-- Total Cost -->
+    <div class="add-form" style="margin-top:16px;text-align:center;padding:18px;">
+      <div class="field-lbl">Estimated Total Cost</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:32px;color:var(--green-dark);" id="shop-est-cost">$0.00</div>
+    </div>
   </div>
 
   <!-- ══ EQUIPMENT ══ -->
@@ -312,32 +381,21 @@ textarea.f-input { resize:vertical; min-height:72px; }
   </div>
 </div>
 
-<!-- ══ EDIT MODAL ══ -->
-<div class="overlay" id="editOverlay" onclick="closeEditOutside(event)">
-  <div class="sheet">
-    <div class="sheet-handle"></div>
-    <div class="sheet-title">Edit Item</div>
-    <div class="form-row cols-1" style="margin-bottom:8px;">
-      <div><div class="field-lbl">Name</div><input class="f-input" id="e-edit-name" /></div>
-    </div>
-    <div class="form-row cols-3" style="margin-bottom:8px;">
-      <div><div class="field-lbl">Cost $</div><input class="f-input" id="e-edit-cost" type="number" min="0" step="0.01"/></div>
-      <div><div class="field-lbl">Qty</div><input class="f-input" id="e-edit-qty"  type="number" min="0"/></div>
-      <div><div class="field-lbl">Alert at</div><input class="f-input" id="e-edit-low" type="number" min="0"/></div>
-    </div>
-    <div class="form-row cols-1" style="margin-bottom:8px;">
-      <div><div class="field-lbl">Unit</div><input class="f-input" id="e-edit-unit"/></div>
-    </div>
-    <div class="form-row cols-1">
-      <div><div class="field-lbl">Notes</div><textarea class="f-input" id="e-edit-notes" rows="3"></textarea></div>
-    </div>
-    <button class="save-btn" onclick="saveEdit()">Save Changes</button>
-  </div>
-</div>
-
 <!-- ══ RECIPES ══ -->
 <div id="panel-recipes" class="section" style="display:none;">
-  <div style="font-size:12px;color:rgba(232,212,138,0.7);margin-bottom:16px;font-style:italic;">Tap a drink to expand. Changes save to Supabase and sync across all devices.</div>
+  <div style="font-size:12px;color:rgba(232,212,138,0.7);margin-bottom:16px;font-style:italic;">Define base recipes (like foams), then use them inside drink recipes. Changes autosave.</div>
+
+  <!-- Base Recipes -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+    <div style="font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);">☁️ Base Recipes</div>
+    <button class="rec-add-btn" style="width:auto;padding:6px 14px;margin:0;font-size:12px;" onclick="addNewSubRecipe()">+ New Base Recipe</button>
+  </div>
+  <div id="sub-recipe-list"></div>
+
+  <div style="height:1px;background:rgba(255,255,255,0.08);margin:20px 0 16px;"></div>
+
+  <!-- Drink Menu -->
+  <div style="font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);margin-bottom:10px;">🍵 Drink Menu</div>
   <div id="recipe-list"></div>
 </div>
 
@@ -350,11 +408,18 @@ const PASSWORD = 'psalm23';
 const SUPABASE_URL = 'https://aexhnoajcxmjcgnfqnsv.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFleGhub2FqY3htamNnbmZxbnN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4ODI2NTQsImV4cCI6MjA5MDQ1ODY1NH0.M8bi4X7yr-TghM7H5TGS5l3g88biJZxSWHEy8TcWIDA';
 
-let inventory   = JSON.parse(localStorage.getItem('mco_inv_ingredients') || '[]');
-let supplies    = JSON.parse(localStorage.getItem('mco_inv_supplies')    || '[]');
 let equipment   = JSON.parse(localStorage.getItem('mco_inv_equipment')   || '[]');
 let editingId   = null;
 let editingType = null;
+
+// Shopping list state
+let orderCounts = JSON.parse(localStorage.getItem('mco_shop_orders')   || '{}');  // { drinkId: count }
+let walkinCounts= JSON.parse(localStorage.getItem('mco_shop_walkins')  || '{}');  // { drinkId: count }
+let containers  = JSON.parse(localStorage.getItem('mco_shop_containers')|| '{}'); // { ingredientKey: { size, unit, price } }
+let extraSupplies = JSON.parse(localStorage.getItem('mco_shop_supplies') || '[]');
+let shopBuffer  = parseInt(localStorage.getItem('mco_shop_buffer') || '10');
+let gotIt       = JSON.parse(localStorage.getItem('mco_shop_gotit') || '{}');  // { key: true }
+let subRecipes  = JSON.parse(localStorage.getItem('mco_sub_recipes') || '[]'); // base recipes like foams
 
 // ── AUTH ──
 function tryLogin() {
@@ -377,18 +442,18 @@ function logout() {
 
 // ── TABS ──
 function switchTab(tab) {
-  ['ingredients','supplies','equipment','recipes'].forEach(t => {
+  ['shopping','recipes','equipment'].forEach(t => {
     document.getElementById('panel-'+t).style.display = t === tab ? 'block' : 'none';
     document.getElementById('tab-'+t).classList.toggle('active', t === tab);
   });
   if (tab === 'recipes') renderRecipes();
+  if (tab === 'shopping') renderShopping();
 }
 
 // ── RENDER ALL ──
 async function renderAll() {
   await renderProfitBanner();
-  renderIngredients();
-  renderSupplies();
+  renderShopping();
   renderEquipment();
 }
 
@@ -404,9 +469,7 @@ async function renderProfitBanner() {
       revenue = data.reduce((s, o) => s + (o.total || 0), 0);
     }
   } catch(e) {}
-  const ingCost  = inventory.reduce((s,i) => s + (i.cost * i.qty), 0);
-  const supCost  = supplies.reduce((s,i)  => s + (i.cost * i.qty), 0);
-  const totalCost = ingCost + supCost;
+  const totalCost = calcEstimatedCost();
   const profit    = revenue - totalCost;
   document.getElementById('p-revenue').textContent = '$' + revenue.toFixed(2);
   document.getElementById('p-cost').textContent    = '-$' + totalCost.toFixed(2);
@@ -414,32 +477,581 @@ async function renderProfitBanner() {
   document.getElementById('p-profit').className    = 'profit-num ' + (profit >= 0 ? 'green' : 'red');
 }
 
-// ── ADD ITEM ──
-function addItem(type) {
-  const pre = type === 'ingredient' ? 'i' : 's';
-  const name  = document.getElementById(`${pre}-name`).value.trim();
-  const cost  = parseFloat(document.getElementById(`${pre}-cost`).value) || 0;
-  const qty   = parseInt(document.getElementById(`${pre}-qty`).value)    || 0;
-  const unit  = document.getElementById(`${pre}-unit`).value.trim() || 'units';
-  const low   = parseInt(document.getElementById(`${pre}-low`).value)    || 1;
-  const notes = document.getElementById(`${pre}-notes`).value.trim();
-  if (!name) { showToast('Please enter a name'); return; }
-  const item = { id: Date.now(), name, cost, qty, unit, low, notes };
-  if (type === 'ingredient') {
-    inventory.push(item);
-    localStorage.setItem('mco_inv_ingredients', JSON.stringify(inventory));
-    [`${pre}-name`,`${pre}-cost`,`${pre}-qty`,`${pre}-unit`,`${pre}-low`,`${pre}-notes`].forEach(id => document.getElementById(id).value = '');
-    renderIngredients();
-  } else {
-    supplies.push(item);
-    localStorage.setItem('mco_inv_supplies', JSON.stringify(supplies));
-    [`${pre}-name`,`${pre}-cost`,`${pre}-qty`,`${pre}-unit`,`${pre}-low`,`${pre}-notes`].forEach(id => document.getElementById(id).value = '');
-    renderSupplies();
-  }
-  renderProfitBanner();
-  showToast(`✅ ${name} added`);
+// ══ SHOPPING LIST LOGIC ══════════════════════════════════
+
+// Unit conversion table (everything to ml or g base)
+const UNIT_CONVERT = {
+  // volume → ml
+  'ml': { base:'ml', factor:1 },
+  'oz': { base:'ml', factor:29.574 },
+  'cups': { base:'ml', factor:236.588 },
+  'tbsp': { base:'ml', factor:14.787 },
+  'tsp': { base:'ml', factor:4.929 },
+  // weight → g
+  'g': { base:'g', factor:1 },
+  // no conversion
+  'pumps': { base:'pumps', factor:1 },
+  '—': null,
+};
+
+function toBase(amount, unit) {
+  const conv = UNIT_CONVERT[unit];
+  if (!conv) return null;
+  return { amount: amount * conv.factor, base: conv.base };
 }
 
+function fromBase(amount, unit) {
+  const conv = UNIT_CONVERT[unit];
+  if (!conv) return amount;
+  return amount / conv.factor;
+}
+
+function saveShopping() {
+  localStorage.setItem('mco_shop_orders', JSON.stringify(orderCounts));
+  localStorage.setItem('mco_shop_walkins', JSON.stringify(walkinCounts));
+  localStorage.setItem('mco_shop_containers', JSON.stringify(containers));
+  localStorage.setItem('mco_shop_supplies', JSON.stringify(extraSupplies));
+  localStorage.setItem('mco_shop_buffer', shopBuffer);
+  localStorage.setItem('mco_shop_gotit', JSON.stringify(gotIt));
+}
+
+function quickFillWalkins(n) {
+  RECIPE_DRINKS.forEach(d => { walkinCounts[d.id] = n; });
+  saveShopping();
+  renderShopping();
+}
+
+function setBuffer(n) {
+  shopBuffer = n;
+  document.querySelectorAll('#panel-shopping .quick-btn').forEach(b => b.classList.remove('active'));
+  saveShopping();
+  renderShoppingList();
+  renderProfitBanner();
+}
+
+function calcAggregatedIngredients() {
+  // Aggregate all ingredients across drinks weighted by order counts
+  const totals = {}; // key = normalized name → { name, baseAmount, baseUnit, drinks[] }
+
+  RECIPE_DRINKS.forEach(drink => {
+    const count = (parseInt(orderCounts[drink.id]) || 0) + (parseInt(walkinCounts[drink.id]) || 0);
+    if (count <= 0) return;
+
+    const data = recipeData[drink.id] || { ingredients: REC_DEFAULTS[drink.id] || [] };
+    data.ingredients.forEach(ing => {
+      if (!ing.name) return;
+      const nm = ing.name.trim();
+
+      // Check if this is a sub-recipe reference
+      if (ing.subId || nm.startsWith('→ ')) {
+        const sub = ing.subId ? subRecipes.find(s => s.id === ing.subId) : null;
+        if (sub && sub.ingredients) {
+          const servings = parseFloat(ing.amount) || 1;
+          // Expand sub-recipe ingredients
+          sub.ingredients.forEach(subIng => {
+            if (!subIng.name) return;
+            const subNm = subIng.name.trim();
+            if (subNm.toLowerCase() === 'ice' || subNm.toLowerCase().includes('hot water')) return;
+            const subAmt = parseFloat(subIng.amount) || 0;
+            if (subAmt <= 0) return;
+            const converted = toBase(subAmt * servings, subIng.unit);
+            if (!converted) return;
+            const key = subNm.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+            if (!totals[key]) {
+              totals[key] = { name: subNm, baseAmount: 0, baseUnit: converted.base, rawUnit: subIng.unit, drinks: [] };
+            }
+            if (totals[key].baseUnit === converted.base) {
+              totals[key].baseAmount += converted.amount * count;
+              totals[key].drinks.push({ name: drink.name + ' (' + sub.name + ')', count, perDrink: subAmt * servings, unit: subIng.unit });
+            }
+          });
+        }
+        return; // Skip the reference row itself
+      }
+
+      // Skip ice and water
+      if (nm.toLowerCase() === 'ice' || nm.toLowerCase().includes('hot water')) return;
+
+      const amt = parseFloat(ing.amount) || 0;
+      if (amt <= 0) return;
+
+      const converted = toBase(amt, ing.unit);
+      if (!converted) return;
+
+      // Normalize key: lowercase, trim
+      const key = nm.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+
+      if (!totals[key]) {
+        totals[key] = { name: nm, baseAmount: 0, baseUnit: converted.base, rawUnit: ing.unit, drinks: [] };
+      }
+      // Only aggregate if same base unit
+      if (totals[key].baseUnit === converted.base) {
+        totals[key].baseAmount += converted.amount * count;
+        totals[key].drinks.push({ name: drink.name, count, perDrink: amt, unit: ing.unit });
+      }
+    });
+  });
+
+  // Apply buffer
+  Object.values(totals).forEach(t => {
+    t.rawBaseAmount = t.baseAmount;
+    t.baseAmount = t.baseAmount * (1 + shopBuffer / 100);
+  });
+
+  return Object.values(totals).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function calcEstimatedCost() {
+  let cost = 0;
+  const ingredients = calcAggregatedIngredients();
+  ingredients.forEach(ing => {
+    const key = ing.name.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+    const c = containers[key];
+    if (c && c.size > 0 && c.price > 0) {
+      const containerInBase = toBase(parseFloat(c.size), c.unit);
+      if (containerInBase && containerInBase.base === ing.baseUnit) {
+        const needed = Math.ceil(ing.baseAmount / containerInBase.amount);
+        cost += needed * c.price;
+      }
+    }
+  });
+  extraSupplies.forEach(s => {
+    if (s.price > 0 && s.perpkg > 0) {
+      cost += Math.ceil((s.need || 0) / s.perpkg) * s.price;
+    }
+  });
+  return cost;
+}
+
+async function loadAllRecipesForShopping() {
+  // Load all recipes from Supabase so shopping calc has full data
+  for (const drink of RECIPE_DRINKS) {
+    if (!recipeData[drink.id]) {
+      const row = await sbFetchRecipe(drink.id);
+      if (row && row.ingredients && row.ingredients.length) {
+        recipeData[drink.id] = { ingredients: row.ingredients, notes: row.notes || '' };
+      }
+    }
+  }
+}
+
+async function renderShopping() {
+  await loadAllRecipesForShopping();
+  renderOrderRows();
+  renderShoppingList();
+  renderSupplyList();
+  updateShopStats();
+}
+
+function renderOrderRows() {
+  const el = document.getElementById('order-rows');
+  el.innerHTML = '';
+  RECIPE_DRINKS.forEach(d => {
+    const pre = parseInt(orderCounts[d.id]) || 0;
+    const walk = parseInt(walkinCounts[d.id]) || 0;
+    const row = document.createElement('div');
+    row.className = 'order-row';
+    row.innerHTML = `
+      <div>
+        <span class="order-drink-num">#${d.id}</span>
+        <span class="order-drink-name">${d.name}</span>
+      </div>
+      <input class="order-input" type="number" min="0" value="${pre}" onchange="setOrder(${d.id},this.value)" onfocus="this.select()"/>
+      <input class="order-input walkin" type="number" min="0" value="${walk}" onchange="setWalkin(${d.id},this.value)" onfocus="this.select()"/>
+    `;
+    el.appendChild(row);
+  });
+}
+
+function setOrder(id, val) {
+  orderCounts[id] = parseInt(val) || 0;
+  saveShopping();
+  renderShoppingList();
+  updateShopStats();
+  renderProfitBanner();
+}
+
+function setWalkin(id, val) {
+  walkinCounts[id] = parseInt(val) || 0;
+  saveShopping();
+  renderShoppingList();
+  updateShopStats();
+  renderProfitBanner();
+}
+
+function updateShopStats() {
+  let pre = 0, walk = 0;
+  RECIPE_DRINKS.forEach(d => {
+    pre += parseInt(orderCounts[d.id]) || 0;
+    walk += parseInt(walkinCounts[d.id]) || 0;
+  });
+  document.getElementById('shop-preorders').textContent = pre;
+  document.getElementById('shop-walkins').textContent = walk;
+  document.getElementById('shop-total').textContent = pre + walk;
+}
+
+function renderShoppingList() {
+  const el = document.getElementById('shopping-list');
+  const ingredients = calcAggregatedIngredients();
+
+  if (!ingredients.length) {
+    el.innerHTML = `<div class="empty"><div class="e-icon">🛒</div>Enter order counts above and fill in your Recipes tab to see your shopping list.</div>`;
+    document.getElementById('shop-est-cost').textContent = '$0.00';
+    return;
+  }
+
+  el.innerHTML = '';
+  let totalCost = 0;
+
+  ingredients.forEach(ing => {
+    const key = ing.name.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+    const c = containers[key] || { size: '', unit: ing.rawUnit, price: '' };
+    const isGot = gotIt[key] || false;
+
+    // Display amount in the most useful unit
+    const displayAmt = Math.round(fromBase(ing.baseAmount, ing.rawUnit) * 10) / 10;
+    const rawDisplayAmt = Math.round(fromBase(ing.rawBaseAmount, ing.rawUnit) * 10) / 10;
+
+    // Calculate containers needed
+    let buyCount = '';
+    let buyCost = '';
+    if (c.size && parseFloat(c.size) > 0) {
+      const containerInBase = toBase(parseFloat(c.size), c.unit);
+      if (containerInBase && containerInBase.base === ing.baseUnit) {
+        const needed = Math.ceil(ing.baseAmount / containerInBase.amount);
+        buyCount = needed;
+        if (c.price && parseFloat(c.price) > 0) {
+          const cost = needed * parseFloat(c.price);
+          buyCost = '$' + cost.toFixed(2);
+          totalCost += cost;
+        }
+      }
+    }
+
+    // Build available units for this ingredient type
+    const unitOpts = ing.baseUnit === 'ml'
+      ? ['ml','oz','cups','tbsp','tsp']
+      : ing.baseUnit === 'g' ? ['g','oz'] : [ing.rawUnit];
+
+    const card = document.createElement('div');
+    card.className = 'shop-card' + (isGot ? ' got-it' : '');
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div class="shop-ing-name">${ing.name}</div>
+        <input type="checkbox" class="shop-check" ${isGot?'checked':''} onchange="toggleGotIt('${key}',this.checked)"/>
+      </div>
+      <div class="shop-raw">
+        Need: <strong>${displayAmt} ${ing.rawUnit}</strong> total
+        <span style="opacity:0.6;">(${rawDisplayAmt} raw + ${shopBuffer}% buffer)</span>
+      </div>
+      <div style="font-size:10px;color:var(--text-soft);margin-bottom:8px;">
+        ${ing.drinks.map(d => d.count + '× ' + d.name.split(' ').slice(0,3).join(' ')).join(' · ')}
+      </div>
+      <div class="shop-container-row">
+        <div>
+          <div class="field-lbl" style="margin-bottom:3px;">Container</div>
+          <input class="f-input" style="padding:7px 8px;font-size:13px;" type="number" min="0" step="0.1" value="${c.size}" placeholder="Size" onchange="setContainer('${key}','size',this.value)"/>
+        </div>
+        <div>
+          <div class="field-lbl" style="margin-bottom:3px;">Unit</div>
+          <select class="f-input" style="padding:7px 4px;font-size:12px;cursor:pointer;" onchange="setContainer('${key}','unit',this.value)">
+            ${unitOpts.map(u => `<option value="${u}" ${c.unit===u?'selected':''}>${u}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <div class="field-lbl" style="margin-bottom:3px;">Price $</div>
+          <input class="f-input" style="padding:7px 8px;font-size:13px;" type="number" min="0" step="0.01" value="${c.price}" placeholder="$0.00" onchange="setContainer('${key}','price',this.value)"/>
+        </div>
+      </div>
+      ${buyCount !== '' ? `
+        <div class="shop-result">
+          <div>
+            <span style="font-size:12px;color:var(--text-mid);">Buy →</span>
+            <span class="shop-buy-num">${buyCount}</span>
+            <span style="font-size:13px;color:var(--text-mid);">${buyCount === 1 ? 'container' : 'containers'}</span>
+          </div>
+          ${buyCost ? `<div class="shop-buy-cost">${buyCost}</div>` : ''}
+        </div>
+      ` : `
+        <div style="font-size:11px;color:var(--gold);margin-top:6px;">↑ Enter container size to see how many to buy</div>
+      `}
+    `;
+    el.appendChild(card);
+  });
+
+  // Add supply costs
+  extraSupplies.forEach(s => {
+    if (s.price > 0 && s.perpkg > 0) {
+      totalCost += Math.ceil((s.need || 0) / s.perpkg) * s.price;
+    }
+  });
+
+  document.getElementById('shop-est-cost').textContent = '$' + totalCost.toFixed(2);
+}
+
+function setContainer(key, field, value) {
+  if (!containers[key]) containers[key] = { size: '', unit: 'ml', price: '' };
+  containers[key][field] = field === 'unit' ? value : (parseFloat(value) || '');
+  saveShopping();
+  renderShoppingList();
+  renderProfitBanner();
+}
+
+function toggleGotIt(key, checked) {
+  if (checked) gotIt[key] = true;
+  else delete gotIt[key];
+  saveShopping();
+  renderShoppingList();
+}
+
+// ── EXTRA SUPPLIES ──
+function addSupply() {
+  const name = document.getElementById('sup-name').value.trim();
+  const need = parseInt(document.getElementById('sup-need').value) || 0;
+  const perpkg = parseInt(document.getElementById('sup-perpkg').value) || 1;
+  const price = parseFloat(document.getElementById('sup-price').value) || 0;
+  const notes = document.getElementById('sup-notes').value.trim();
+  if (!name) { showToast('Please enter item name'); return; }
+  extraSupplies.push({ id: Date.now(), name, need, perpkg, price, notes });
+  saveShopping();
+  ['sup-name','sup-need','sup-perpkg','sup-price','sup-notes'].forEach(id => document.getElementById(id).value = '');
+  renderSupplyList();
+  renderProfitBanner();
+  showToast('✅ ' + name + ' added');
+}
+
+function deleteSupply(id) {
+  if (!confirm('Remove this supply?')) return;
+  extraSupplies = extraSupplies.filter(s => s.id !== id);
+  saveShopping();
+  renderSupplyList();
+  renderProfitBanner();
+  showToast('🗑 Removed');
+}
+
+function renderSupplyList() {
+  const el = document.getElementById('supply-list');
+  if (!extraSupplies.length) { el.innerHTML = ''; return; }
+  el.innerHTML = '';
+  extraSupplies.forEach(s => {
+    const pkgs = s.perpkg > 0 ? Math.ceil(s.need / s.perpkg) : 0;
+    const cost = pkgs * s.price;
+    const isGot = gotIt['sup-'+s.id] || false;
+    const card = document.createElement('div');
+    card.className = 'sup-card' + (isGot ? ' got-it' : '');
+    card.innerHTML = `
+      <input type="checkbox" class="shop-check" ${isGot?'checked':''} onchange="toggleGotIt('sup-${s.id}',this.checked)" style="margin-right:12px;"/>
+      <div class="sup-info">
+        <div class="sup-name">${s.name}</div>
+        <div class="sup-detail">Need ${s.need} · ${s.perpkg}/pkg${s.notes ? ' · '+s.notes : ''}</div>
+      </div>
+      <div class="sup-buy">
+        <div class="sup-buy-num">${pkgs} pkg${pkgs!==1?'s':''}</div>
+        ${cost > 0 ? `<div class="sup-buy-cost">$${cost.toFixed(2)}</div>` : ''}
+      </div>
+      <button class="btn-del" style="margin-left:10px;" onclick="deleteSupply(${s.id})">🗑</button>
+    `;
+    el.appendChild(card);
+  });
+}
+
+
+// ══ BASE (SUB) RECIPES ══════════════════════════════════
+
+function saveSubRecipes() {
+  localStorage.setItem('mco_sub_recipes', JSON.stringify(subRecipes));
+}
+
+function addNewSubRecipe() {
+  const id = Date.now();
+  subRecipes.push({ id, name: '', ingredients: [{ name:'', amount:'', unit:'tbsp' }], notes: '' });
+  saveSubRecipes();
+  renderSubRecipes();
+  // Auto-open the new one
+  setTimeout(() => {
+    const card = document.getElementById('srcard-' + id);
+    if (card) { card.classList.add('open'); card.querySelector('.sub-recipe-name-input')?.focus(); }
+  }, 50);
+}
+
+function deleteSubRecipe(id) {
+  if (!confirm('Delete this base recipe?')) return;
+  subRecipes = subRecipes.filter(s => s.id !== id);
+  saveSubRecipes();
+  renderSubRecipes();
+  showToast('🗑 Base recipe removed');
+}
+
+function renderSubRecipes() {
+  const el = document.getElementById('sub-recipe-list');
+  if (!el) return;
+  if (!subRecipes.length) {
+    el.innerHTML = `<div style="text-align:center;padding:16px;font-size:12px;color:rgba(232,212,138,0.5);">No base recipes yet. Create one for your foams!</div>`;
+    return;
+  }
+  el.innerHTML = '';
+  subRecipes.forEach(sub => {
+    const card = document.createElement('div');
+    card.className = 'sub-recipe-card recipe-card';
+    card.id = 'srcard-' + sub.id;
+    const ingCount = sub.ingredients.filter(i => i.name).length;
+    card.innerHTML = `
+      <div class="recipe-header" onclick="toggleSubRecipe(${sub.id})">
+        <div class="recipe-num" style="color:var(--gold);">☁️</div>
+        <input class="sub-recipe-name-input" placeholder="Name (e.g. Vanilla Cold Foam)" value="${escHtml(sub.name)}" onclick="event.stopPropagation()" oninput="updateSubName(${sub.id},this.value)"/>
+        <span class="recipe-badge">${ingCount} items</span>
+        <div class="recipe-chevron">▼</div>
+      </div>
+      <div class="recipe-body">
+        <div class="rec-col-headers">
+          <div></div>
+          <div class="rec-col-lbl">Ingredient</div>
+          <div class="rec-col-lbl">Amount</div>
+          <div class="rec-col-lbl">Unit</div>
+          <div></div>
+        </div>
+        <div class="rec-ing-list" id="srlist-${sub.id}"></div>
+        <button class="rec-add-btn" onclick="srAddRow(${sub.id})">+ Add ingredient</button>
+        <div class="rec-notes-lbl">Notes</div>
+        <textarea class="rec-notes" id="srnotes-${sub.id}" placeholder="e.g. froth until stiff peaks…" oninput="autoGrow(this);saveSubFromDOM(${sub.id})">${escHtml(sub.notes || '')}</textarea>
+        <div style="display:flex;justify-content:flex-end;margin-top:10px;">
+          <button class="btn-del" onclick="deleteSubRecipe(${sub.id})">🗑 Delete</button>
+        </div>
+      </div>
+    `;
+    el.appendChild(card);
+
+    // Fill ingredient rows
+    const list = card.querySelector('#srlist-' + sub.id);
+    sub.ingredients.forEach(ing => {
+      const row = makeSRRow(ing, sub.id);
+      list.appendChild(row);
+    });
+
+    // Auto-grow notes
+    const notesEl = card.querySelector('#srnotes-' + sub.id);
+    if (notesEl) autoGrow(notesEl);
+  });
+}
+
+function toggleSubRecipe(id) {
+  document.getElementById('srcard-' + id)?.classList.toggle('open');
+}
+
+function updateSubName(id, name) {
+  const sub = subRecipes.find(s => s.id === id);
+  if (sub) { sub.name = name; saveSubRecipes(); }
+}
+
+function makeSRRow(ing, subId) {
+  const row = document.createElement('div');
+  row.className = 'rec-ing-row';
+  const opts = REC_UNITS.map(u => `<option value="${u}" ${(ing.unit||'tbsp')===u?'selected':''}>${u}</option>`).join('');
+  row.innerHTML = `
+    <div style="width:20px;"></div>
+    <input class="rec-input rec-iname" type="text" placeholder="Ingredient" value="${escHtml(ing.name||'')}" oninput="saveSubFromDOM(${subId})"/>
+    <div class="rec-stepper">
+      <button class="rec-step-btn" onclick="srStepAmt(this,-1,${subId})">−</button>
+      <input class="rec-iamt" type="number" placeholder="0" step="0.1" min="0" value="${escHtml(ing.amount||'')}" oninput="saveSubFromDOM(${subId})"/>
+      <button class="rec-step-btn" onclick="srStepAmt(this,1,${subId})">+</button>
+    </div>
+    <select class="rec-unit" onchange="saveSubFromDOM(${subId})">${opts}</select>
+    <button class="rec-del" onclick="this.closest('.rec-ing-row').remove();saveSubFromDOM(${subId})">×</button>
+  `;
+  return row;
+}
+
+function srAddRow(subId) {
+  const list = document.getElementById('srlist-' + subId);
+  const row = makeSRRow({ name:'', amount:'', unit:'tbsp' }, subId);
+  list.appendChild(row);
+  row.querySelector('.rec-iname').focus();
+}
+
+function srStepAmt(btn, delta, subId) {
+  const input = btn.closest('.rec-stepper').querySelector('.rec-iamt');
+  const cur = parseFloat(input.value) || 0;
+  input.value = Math.max(0, Math.round((cur + delta * 0.1) * 10) / 10);
+  saveSubFromDOM(subId);
+}
+
+function saveSubFromDOM(subId) {
+  const sub = subRecipes.find(s => s.id === subId);
+  if (!sub) return;
+  const rows = document.querySelectorAll(`#srlist-${subId} .rec-ing-row`);
+  sub.ingredients = [];
+  rows.forEach(row => {
+    const name = row.querySelector('.rec-iname')?.value?.trim() || '';
+    const amount = row.querySelector('.rec-iamt')?.value || '';
+    const unit = row.querySelector('.rec-unit')?.value || 'tbsp';
+    if (name || amount) sub.ingredients.push({ name, amount, unit });
+  });
+  const notesEl = document.getElementById('srnotes-' + subId);
+  if (notesEl) sub.notes = notesEl.value.trim();
+  // Update badge
+  const badge = document.querySelector(`#srcard-${subId} .recipe-badge`);
+  if (badge) badge.textContent = sub.ingredients.filter(i=>i.name).length + ' items';
+  saveSubRecipes();
+}
+
+// ── Insert base recipe into a drink ──
+function showSubPicker(drinkId) {
+  // Close any open pickers first
+  document.querySelectorAll('.sub-picker-menu').forEach(m => m.classList.remove('open'));
+  const menu = document.getElementById('subpick-' + drinkId);
+  if (menu) menu.classList.toggle('open');
+}
+
+function insertSubRecipe(drinkId, subId) {
+  const sub = subRecipes.find(s => s.id === subId);
+  if (!sub || !sub.name) return;
+  // Close picker
+  document.querySelectorAll('.sub-picker-menu').forEach(m => m.classList.remove('open'));
+  // Add a sub-recipe reference row to the drink
+  const list = document.getElementById('rlist-' + drinkId);
+  const row = makeSubRefRow(sub, drinkId);
+  list.appendChild(row);
+  wireAutosave(row, drinkId);
+  scheduleAutosave(drinkId);
+  showToast('✅ ' + sub.name + ' added');
+}
+
+function makeSubRefRow(sub, drinkId) {
+  const row = document.createElement('div');
+  row.className = 'rec-ing-row rec-sub-row';
+  row.draggable = true;
+  row.dataset.subId = sub.id;
+  row.innerHTML = `
+    <div class="rec-drag-handle" title="Drag to reorder">⠿</div>
+    <div class="rec-sub-label">☁️ ${escHtml(sub.name)}</div>
+    <div class="rec-stepper">
+      <button class="rec-step-btn" onclick="stepAmt(this,-1)">−</button>
+      <input class="rec-iamt" type="number" placeholder="1" step="1" min="1" value="1"/>
+      <button class="rec-step-btn" onclick="stepAmt(this,1)">+</button>
+    </div>
+    <span style="font-size:12px;color:var(--gold);padding:8px 6px;">serving</span>
+    <button class="rec-del" onclick="recDelRow(this)">×</button>
+  `;
+  // Hidden inputs so autosave picks it up
+  const hiddenName = document.createElement('input');
+  hiddenName.type = 'hidden'; hiddenName.className = 'rec-iname'; hiddenName.value = '→ ' + sub.name;
+  row.appendChild(hiddenName);
+  const hiddenUnit = document.createElement('input');
+  hiddenUnit.type = 'hidden'; hiddenUnit.className = 'rec-unit'; hiddenUnit.value = 'serving';
+  row.appendChild(hiddenUnit);
+
+  wireDrag(row, drinkId);
+  return row;
+}
+
+// Close sub picker when clicking outside
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.sub-picker')) {
+    document.querySelectorAll('.sub-picker-menu').forEach(m => m.classList.remove('open'));
+  }
+});
+
+// ── EQUIPMENT ──
 function addEquipment() {
   const name  = document.getElementById('e-name').value.trim();
   const notes = document.getElementById('e-notes').value.trim();
@@ -452,79 +1064,6 @@ function addEquipment() {
   showToast(`✅ ${name} added`);
 }
 
-// ── RENDER INGREDIENTS ──
-function renderIngredients() {
-  const totalCost = inventory.reduce((s,i) => s + i.cost * i.qty, 0);
-  const lowCount  = inventory.filter(i => i.qty <= i.low).length;
-  document.getElementById('ing-count').textContent = inventory.length;
-  document.getElementById('ing-cost').textContent  = '$' + totalCost.toFixed(2);
-  document.getElementById('ing-low').textContent   = lowCount;
-
-  const el = document.getElementById('list-ingredients');
-  if (!inventory.length) { el.innerHTML = `<div class="empty"><div class="e-icon">🌿</div>No ingredients added yet.</div>`; return; }
-  el.innerHTML = '';
-  [...inventory].sort((a,b) => a.qty - b.qty).forEach(item => renderItemCard(el, item, 'ingredient'));
-}
-
-// ── RENDER SUPPLIES ──
-function renderSupplies() {
-  const totalCost = supplies.reduce((s,i) => s + i.cost * i.qty, 0);
-  const lowCount  = supplies.filter(i => i.qty <= i.low).length;
-  document.getElementById('sup-count').textContent = supplies.length;
-  document.getElementById('sup-cost').textContent  = '$' + totalCost.toFixed(2);
-  document.getElementById('sup-low').textContent   = lowCount;
-
-  const el = document.getElementById('list-supplies');
-  if (!supplies.length) { el.innerHTML = `<div class="empty"><div class="e-icon">☕</div>No supplies added yet.</div>`; return; }
-  el.innerHTML = '';
-  [...supplies].sort((a,b) => a.qty - b.qty).forEach(item => renderItemCard(el, item, 'supply'));
-}
-
-function renderItemCard(container, item, type) {
-  const isLow  = item.qty <= item.low;
-  const isZero = item.qty === 0;
-  const card = document.createElement('div');
-  card.className = `inv-card${isZero ? ' zero' : isLow ? ' low' : ''}`;
-  card.innerHTML = `
-    <div class="inv-top">
-      <div class="inv-name">${item.name}</div>
-      ${isZero ? `<span class="low-badge">❌ Out</span>` : isLow ? `<span class="low-badge">⚠️ Low</span>` : `<span class="in-stock">✓ In Stock</span>`}
-    </div>
-    <div class="inv-details">
-      <div class="inv-detail">
-        <span class="inv-detail-label">Cost / unit</span>
-        <span class="inv-detail-val">$${item.cost.toFixed(2)}</span>
-      </div>
-      <div class="inv-detail">
-        <span class="inv-detail-label">Total value</span>
-        <span class="inv-detail-val" style="color:var(--green-dark);">$${(item.cost * item.qty).toFixed(2)}</span>
-      </div>
-      <div class="inv-detail">
-        <span class="inv-detail-label">Alert at</span>
-        <span class="inv-detail-val">${item.low} ${item.unit}</span>
-      </div>
-    </div>
-    <div class="qty-row">
-      <div class="qty-label">Quantity</div>
-      <div class="qty-ctrl">
-        <button class="qbtn minus" onclick="adjustQty('${type}',${item.id},-1)">−</button>
-        <span class="qty-val ${isLow ? 'low' : 'good'}">${item.qty}</span>
-        <button class="qbtn plus"  onclick="adjustQty('${type}',${item.id},1)">+</button>
-      </div>
-      <span style="font-size:13px;color:var(--text-soft);">${item.unit}</span>
-    </div>
-    ${item.notes ? `<div class="inv-notes">📝 ${item.notes}</div>` : ''}
-    <div class="inv-footer">
-      <div style="display:flex;gap:8px;">
-        <button class="btn-edit" onclick="openEdit('${type}',${item.id})">✏️ Edit</button>
-        <button class="btn-del"  onclick="deleteItem('${type}',${item.id})">🗑</button>
-      </div>
-    </div>
-  `;
-  container.appendChild(card);
-}
-
-// ── RENDER EQUIPMENT ──
 function renderEquipment() {
   const el = document.getElementById('list-equipment');
   if (!equipment.length) { el.innerHTML = `<div class="empty"><div class="e-icon">🔧</div>No equipment notes added yet.</div>`; return; }
@@ -543,75 +1082,12 @@ function renderEquipment() {
   });
 }
 
-// ── QTY ADJUST ──
-function adjustQty(type, id, delta) {
-  const arr = type === 'ingredient' ? inventory : supplies;
-  const key = type === 'ingredient' ? 'mco_inv_ingredients' : 'mco_inv_supplies';
-  const idx = arr.findIndex(i => i.id === id);
-  if (idx === -1) return;
-  arr[idx].qty = Math.max(0, arr[idx].qty + delta);
-  localStorage.setItem(key, JSON.stringify(arr));
-  type === 'ingredient' ? renderIngredients() : renderSupplies();
-  renderProfitBanner();
-}
-
-// ── DELETE ──
-function deleteItem(type, id) {
-  if (!confirm('Remove this item?')) return;
-  if (type === 'ingredient') {
-    inventory = inventory.filter(i => i.id !== id);
-    localStorage.setItem('mco_inv_ingredients', JSON.stringify(inventory));
-    renderIngredients();
-  } else {
-    supplies = supplies.filter(i => i.id !== id);
-    localStorage.setItem('mco_inv_supplies', JSON.stringify(supplies));
-    renderSupplies();
-  }
-  renderProfitBanner();
-  showToast('🗑 Removed');
-}
-
 function deleteEquipment(id) {
   if (!confirm('Remove this equipment note?')) return;
   equipment = equipment.filter(i => i.id !== id);
   localStorage.setItem('mco_inv_equipment', JSON.stringify(equipment));
   renderEquipment();
   showToast('🗑 Removed');
-}
-
-// ── EDIT MODAL ──
-function openEdit(type, id) {
-  const arr  = type === 'ingredient' ? inventory : supplies;
-  const item = arr.find(i => i.id === id);
-  if (!item) return;
-  editingId   = id;
-  editingType = type;
-  document.getElementById('e-edit-name').value  = item.name;
-  document.getElementById('e-edit-cost').value  = item.cost;
-  document.getElementById('e-edit-qty').value   = item.qty;
-  document.getElementById('e-edit-unit').value  = item.unit;
-  document.getElementById('e-edit-low').value   = item.low;
-  document.getElementById('e-edit-notes').value = item.notes || '';
-  document.getElementById('editOverlay').classList.add('open');
-}
-function closeEditOutside(e) { if (e.target === document.getElementById('editOverlay')) document.getElementById('editOverlay').classList.remove('open'); }
-function saveEdit() {
-  if (!editingId) return;
-  const arr = editingType === 'ingredient' ? inventory : supplies;
-  const key = editingType === 'ingredient' ? 'mco_inv_ingredients' : 'mco_inv_supplies';
-  const idx = arr.findIndex(i => i.id === editingId);
-  if (idx === -1) return;
-  arr[idx].name  = document.getElementById('e-edit-name').value.trim() || arr[idx].name;
-  arr[idx].cost  = parseFloat(document.getElementById('e-edit-cost').value) || 0;
-  arr[idx].qty   = parseInt(document.getElementById('e-edit-qty').value)    || 0;
-  arr[idx].unit  = document.getElementById('e-edit-unit').value.trim() || 'units';
-  arr[idx].low   = parseInt(document.getElementById('e-edit-low').value)    || 1;
-  arr[idx].notes = document.getElementById('e-edit-notes').value.trim();
-  localStorage.setItem(key, JSON.stringify(arr));
-  document.getElementById('editOverlay').classList.remove('open');
-  editingType === 'ingredient' ? renderIngredients() : renderSupplies();
-  renderProfitBanner();
-  showToast('✅ Item updated');
 }
 
 // ── RECIPES ──────────────────────────────────────────────
@@ -671,6 +1147,7 @@ async function sbSaveRecipe(drinkId, drinkName, ingredients, notes) {
 }
 
 function renderRecipes() {
+  renderSubRecipes();
   const el = document.getElementById('recipe-list');
   el.innerHTML = '';
   let lastCat = null;
@@ -688,6 +1165,12 @@ function renderRecipes() {
     const card = document.createElement('div');
     card.className = 'recipe-card';
     card.id = 'rcard-' + drink.id;
+
+    // Build sub-recipe picker menu items
+    const pickerItems = subRecipes.length
+      ? subRecipes.map(s => `<div class="sub-picker-item" onclick="insertSubRecipe(${drink.id},${s.id})">☁️ ${escHtml(s.name || 'Untitled')}</div>`).join('')
+      : `<div class="sub-picker-empty">No base recipes yet — create one above!</div>`;
+
     card.innerHTML = `
       <div class="recipe-header" onclick="toggleRecipe(${drink.id})">
         <div class="recipe-num">#${drink.id}</div>
@@ -698,13 +1181,20 @@ function renderRecipes() {
       </div>
       <div class="recipe-body">
         <div class="rec-col-headers">
+          <div></div>
           <div class="rec-col-lbl">Ingredient</div>
           <div class="rec-col-lbl">Amount</div>
           <div class="rec-col-lbl">Unit</div>
           <div></div>
         </div>
         <div class="rec-ing-list" id="rlist-${drink.id}"></div>
-        <button class="rec-add-btn" onclick="recAddRow(${drink.id})">+ Add ingredient</button>
+        <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">
+          <button class="rec-add-btn" style="flex:1;margin:0;" onclick="recAddRow(${drink.id})">+ Add ingredient</button>
+          <div class="sub-picker" style="flex:1;">
+            <button class="rec-insert-btn" style="width:100%;" onclick="event.stopPropagation();showSubPicker(${drink.id})">☁️ Insert base recipe</button>
+            <div class="sub-picker-menu" id="subpick-${drink.id}">${pickerItems}</div>
+          </div>
+        </div>
         <div class="rec-notes-lbl">Notes / technique</div>
         <textarea class="rec-notes" id="rnotes-${drink.id}" placeholder="e.g. whisk order, layering, technique tips...">${escHtml(data.notes || '')}</textarea>
         <div class="rec-autosave">
@@ -719,7 +1209,21 @@ function renderRecipes() {
     const list = card.querySelector('#rlist-' + drink.id);
     const notesEl = card.querySelector('#rnotes-' + drink.id);
     data.ingredients.forEach(ing => {
-      const row = makeRecRow(ing, drink.id);
+      let row;
+      // Check if this is a sub-recipe reference
+      if (ing.subId || (ing.name && ing.name.startsWith('→ '))) {
+        const subId = ing.subId || null;
+        const sub = subId ? subRecipes.find(s => s.id === subId) : null;
+        if (sub) {
+          row = makeSubRefRow(sub, drink.id);
+          const amtInput = row.querySelector('.rec-iamt');
+          if (amtInput) amtInput.value = ing.amount || 1;
+        } else {
+          row = makeRecRow(ing, drink.id);
+        }
+      } else {
+        row = makeRecRow(ing, drink.id);
+      }
       list.appendChild(row);
       wireAutosave(row, drink.id);
     });
@@ -747,7 +1251,19 @@ async function loadRecipeFromSupabase(drinkId) {
     if (list) {
       list.innerHTML = '';
       row.ingredients.forEach(ing => {
-        const r = makeRecRow(ing, drinkId);
+        let r;
+        if (ing.subId || (ing.name && ing.name.startsWith('→ '))) {
+          const sub = ing.subId ? subRecipes.find(s => s.id === ing.subId) : null;
+          if (sub) {
+            r = makeSubRefRow(sub, drinkId);
+            const amtInput = r.querySelector('.rec-iamt');
+            if (amtInput) amtInput.value = ing.amount || 1;
+          } else {
+            r = makeRecRow(ing, drinkId);
+          }
+        } else {
+          r = makeRecRow(ing, drinkId);
+        }
         list.appendChild(r);
         wireAutosave(r, drinkId);
       });
@@ -766,8 +1282,10 @@ async function loadRecipeFromSupabase(drinkId) {
 function makeRecRow(ing, drinkId) {
   const row = document.createElement('div');
   row.className = 'rec-ing-row';
+  row.draggable = true;
   const opts = REC_UNITS.map(u => `<option value="${u}" ${(ing.unit||'ml')===u?'selected':''}>${u}</option>`).join('');
   row.innerHTML = `
+    <div class="rec-drag-handle" title="Drag to reorder">⠿</div>
     <input class="rec-input rec-iname" type="text" placeholder="Ingredient" value="${escHtml(ing.name||'')}"/>
     <div class="rec-stepper">
       <button class="rec-step-btn" onclick="stepAmt(this,-1)">−</button>
@@ -777,6 +1295,7 @@ function makeRecRow(ing, drinkId) {
     <select class="rec-unit">${opts}</select>
     <button class="rec-del" onclick="recDelRow(this)">×</button>
   `;
+  wireDrag(row, drinkId);
   return row;
 }
 
@@ -822,7 +1341,12 @@ async function doAutosave(drinkId) {
     const name   = row.querySelector('.rec-iname').value.trim();
     const amount = row.querySelector('.rec-iamt').value;
     const unit   = row.querySelector('.rec-unit').value;
-    if (name || amount) ingredients.push({ name, amount, unit });
+    const subId  = row.dataset.subId ? parseInt(row.dataset.subId) : undefined;
+    if (name || amount) {
+      const ing = { name, amount, unit };
+      if (subId) ing.subId = subId;
+      ingredients.push(ing);
+    }
   });
   const notesEl = document.getElementById('rnotes-' + drinkId);
   const notes   = notesEl ? notesEl.value.trim() : '';
@@ -835,6 +1359,85 @@ async function doAutosave(drinkId) {
   const ok = await sbSaveRecipe(drinkId, drink.name, ingredients, notes);
   setDot(drinkId, ok ? 'saved' : 'error', ok ? 'Saved ✓' : 'Save failed');
   if (ok) setTimeout(() => setDot(drinkId, '', 'Changes autosave'), 2500);
+}
+
+// ── DRAG TO REORDER ──────────────────────────────────
+let dragSrc = null;
+
+function wireDrag(row, drinkId) {
+  const handle = row.querySelector('.rec-drag-handle');
+
+  // Mouse drag
+  row.addEventListener('dragstart', e => {
+    dragSrc = row;
+    row.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  row.addEventListener('dragend', () => {
+    row.classList.remove('dragging');
+    document.querySelectorAll('.rec-ing-row').forEach(r => r.classList.remove('drag-over'));
+    dragSrc = null;
+    scheduleAutosave(drinkId);
+  });
+  row.addEventListener('dragover', e => {
+    e.preventDefault();
+    if (dragSrc && dragSrc !== row) {
+      document.querySelectorAll('.rec-ing-row').forEach(r => r.classList.remove('drag-over'));
+      row.classList.add('drag-over');
+    }
+  });
+  row.addEventListener('drop', e => {
+    e.preventDefault();
+    if (dragSrc && dragSrc !== row) {
+      const list = row.parentNode;
+      const rows = [...list.querySelectorAll('.rec-ing-row')];
+      const srcIdx  = rows.indexOf(dragSrc);
+      const destIdx = rows.indexOf(row);
+      if (srcIdx < destIdx) list.insertBefore(dragSrc, row.nextSibling);
+      else list.insertBefore(dragSrc, row);
+    }
+    document.querySelectorAll('.rec-ing-row').forEach(r => r.classList.remove('drag-over'));
+  });
+
+  // Touch drag (mobile)
+  let touchStartY = 0;
+  handle.addEventListener('touchstart', e => {
+    dragSrc = row;
+    touchStartY = e.touches[0].clientY;
+    row.classList.add('dragging');
+    e.preventDefault();
+  }, { passive: false });
+
+  handle.addEventListener('touchmove', e => {
+    e.preventDefault();
+    const touchY = e.touches[0].clientY;
+    const list   = row.parentNode;
+    const rows   = [...list.querySelectorAll('.rec-ing-row')];
+    document.querySelectorAll('.rec-ing-row').forEach(r => r.classList.remove('drag-over'));
+    // Find which row the finger is over
+    const target = rows.find(r => {
+      if (r === dragSrc) return false;
+      const rect = r.getBoundingClientRect();
+      return touchY >= rect.top && touchY <= rect.bottom;
+    });
+    if (target) target.classList.add('drag-over');
+  }, { passive: false });
+
+  handle.addEventListener('touchend', e => {
+    row.classList.remove('dragging');
+    const list  = row.parentNode;
+    const rows  = [...list.querySelectorAll('.rec-ing-row')];
+    const target = rows.find(r => r.classList.contains('drag-over'));
+    if (target && target !== dragSrc) {
+      const srcIdx  = rows.indexOf(dragSrc);
+      const destIdx = rows.indexOf(target);
+      if (srcIdx < destIdx) list.insertBefore(dragSrc, target.nextSibling);
+      else list.insertBefore(dragSrc, target);
+    }
+    document.querySelectorAll('.rec-ing-row').forEach(r => r.classList.remove('drag-over'));
+    dragSrc = null;
+    scheduleAutosave(drinkId);
+  });
 }
 
 // Wire autosave listeners after row is inserted
