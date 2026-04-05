@@ -526,19 +526,22 @@ async function refreshDemand() {
 
     orders.forEach(order => {
       if (!order.items) return;
-      // Parse "2x Matcha Latte (Oat Milk) (50%), 1x Mango Matcha (100%)"
+      // Split items string by comma
       const parts = order.items.split(/,\s*/);
       parts.forEach(part => {
-        const match = part.match(/^(\d+)x\s+(.+)\s+\(\d+%\)$/);
+        // Extract qty — handle "2x Name..." or "2× Name..."
+        const match = part.trim().match(/^(\d+)\s*[x×]\s*(.+)/i);
         if (!match) return;
         const qty = parseInt(match[1]) || 0;
-        const drinkName = match[2].trim();
-        // Find matching drink
-        const key = Object.keys(counts).find(k =>
-          k.toLowerCase() === drinkName.toLowerCase() ||
-          drinkName.toLowerCase().includes(k.toLowerCase()) ||
-          k.toLowerCase().includes(drinkName.toLowerCase())
-        );
+        const rawName = match[2].trim().toLowerCase();
+
+        // Find best matching drink by checking if the raw text contains a known drink name
+        // Sort RECIPE_DRINKS by name length descending so longer (more specific) names match first
+        const sortedKeys = Object.keys(counts).sort((a, b) => b.length - a.length);
+        const key = sortedKeys.find(k => {
+          const kLower = k.toLowerCase();
+          return rawName.startsWith(kLower) || rawName.includes(kLower) || kLower.includes(rawName.replace(/\s*\([^)]*\)\s*/g, '').trim());
+        });
         if (key) {
           if (order.type === 'walkin') counts[key].walkin += qty;
           else counts[key].preorder += qty;
@@ -555,6 +558,7 @@ async function refreshDemand() {
         <div><div class="dt-num">${totalWalk}</div><div class="dt-lbl">Walk-ins</div></div>
         <div><div class="dt-num" style="color:var(--gold);">${totalPre + totalWalk}</div><div class="dt-lbl">Outstanding</div></div>
       </div>
+      <div style="font-size:10px;color:var(--text-soft);text-align:center;margin-top:6px;">${orders.length} order${orders.length!==1?'s':''} found (${allOrders.length - orders.length} picked up)</div>
     `;
 
     // Render grid cards
