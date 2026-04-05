@@ -241,6 +241,30 @@ textarea.f-input { resize:vertical; min-height:72px; }
 .sup-buy-num { font-family:'DM Serif Display',serif; font-size:20px; color:var(--green-dark); }
 .sup-buy-cost { font-size:13px; color:var(--gold); }
 
+/* ── LIVE DEMAND ── */
+.demand-wrap { margin-bottom:20px; }
+.demand-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.demand-title { font-family:'DM Serif Display',serif; font-size:18px; color:var(--cream); }
+.demand-refresh { font-size:11px; color:var(--gold); background:rgba(201,168,76,0.15); border:1px solid rgba(201,168,76,0.3); border-radius:8px; padding:5px 12px; cursor:pointer; font-family:'Jost',sans-serif; }
+.demand-refresh:active { background:rgba(201,168,76,0.3); }
+.demand-updated { font-size:10px; color:var(--text-soft); margin-bottom:10px; text-align:right; }
+.demand-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.demand-card { background:var(--white); border-radius:14px; padding:12px 14px; box-shadow:0 4px 20px rgba(0,0,0,0.2); position:relative; overflow:hidden; }
+.demand-card.foam { border-left:4px solid var(--gold); }
+.demand-card.dairy-free { border-left:4px solid var(--green-light); }
+.demand-card.whole-milk { border-left:4px solid #3D95CE; }
+.demand-drink-name { font-size:11px; font-weight:600; color:var(--text-mid); line-height:1.3; margin-bottom:6px; }
+.demand-big-num { font-family:'DM Serif Display',serif; font-size:32px; color:var(--green-dark); line-height:1; }
+.demand-big-num.zero { color:var(--cream-dark); }
+.demand-breakdown { font-size:10px; color:var(--text-soft); margin-top:4px; }
+.demand-breakdown span { font-weight:600; }
+.demand-totals { background:rgba(45,92,58,0.08); border-radius:14px; padding:14px; margin-top:10px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; text-align:center; border:1px solid rgba(45,92,58,0.15); }
+.demand-totals .dt-num { font-family:'DM Serif Display',serif; font-size:24px; color:var(--green-dark); line-height:1; }
+.demand-totals .dt-lbl { font-size:9px; letter-spacing:0.15em; color:var(--text-soft); text-transform:uppercase; margin-top:4px; }
+.demand-empty { text-align:center; padding:20px; font-size:13px; color:rgba(232,212,138,0.5); }
+.demand-pulse { animation: demandPulse 1s ease-in-out; }
+@keyframes demandPulse { 0%{opacity:1} 50%{opacity:0.5} 100%{opacity:1} }
+
 /* ── TOAST ── */
 .toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px); background:#fef9f0; color:var(--green-dark); border-radius:30px; padding:12px 22px; font-size:14px; font-weight:500; opacity:0; transition:all 0.3s; z-index:600; white-space:nowrap; pointer-events:none; }
 .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
@@ -298,6 +322,21 @@ textarea.f-input { resize:vertical; min-height:72px; }
 
   <!-- ══ SHOPPING LIST ══ -->
   <div id="panel-shopping" class="section">
+    <!-- Live Demand Tracker -->
+    <div class="demand-wrap">
+      <div class="demand-header">
+        <div class="demand-title">📊 Live Queue</div>
+        <button class="demand-refresh" onclick="refreshDemand()">↻ Refresh</button>
+      </div>
+      <div class="demand-updated" id="demand-updated"></div>
+      <div id="demand-totals-row"></div>
+      <div class="demand-grid" id="demand-grid">
+        <div class="demand-empty">Loading orders…</div>
+      </div>
+    </div>
+
+    <div style="height:1px;background:rgba(255,255,255,0.08);margin:0 0 20px;"></div>
+
     <!-- Order Counts -->
     <div style="font-size:12px;color:rgba(232,212,138,0.7);margin-bottom:12px;font-style:italic;">
       Enter pre-order counts + walk-in estimates. Shopping list auto-calculates from your Recipes tab.
@@ -453,8 +492,107 @@ function switchTab(tab) {
 // ── RENDER ALL ──
 async function renderAll() {
   await renderProfitBanner();
+  await refreshDemand();
   renderShopping();
   renderEquipment();
+  // Auto-refresh demand every 15 seconds
+  setInterval(refreshDemand, 15000);
+}
+
+// ══ LIVE DEMAND TRACKER ══════════════════════════════════
+
+async function refreshDemand() {
+  const grid = document.getElementById('demand-grid');
+  const totalsRow = document.getElementById('demand-totals-row');
+  try {
+    // Fetch all orders, filter in JS for robustness
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/orders?select=*`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+    });
+    if (!res.ok) throw new Error('Fetch failed: ' + res.status);
+    const allOrders = await res.json();
+
+    // Exclude picked-up orders (case-insensitive)
+    const orders = allOrders.filter(o => {
+      const s = (o.status || '').toLowerCase().trim();
+      return s !== 'picked up' && s !== 'pickedup' && s !== 'completed' && s !== 'cancelled';
+    });
+
+    // Parse items and count per drink
+    const counts = {}; // drinkName -> { preorder: N, walkin: N }
+    RECIPE_DRINKS.forEach(d => {
+      counts[d.name] = { preorder: 0, walkin: 0, id: d.id, cat: d.cat };
+    });
+
+    orders.forEach(order => {
+      if (!order.items) return;
+      // Parse "2x Matcha Latte (Oat Milk) (50%), 1x Mango Matcha (100%)"
+      const parts = order.items.split(/,\s*/);
+      parts.forEach(part => {
+        const match = part.match(/^(\d+)x\s+(.+)\s+\(\d+%\)$/);
+        if (!match) return;
+        const qty = parseInt(match[1]) || 0;
+        const drinkName = match[2].trim();
+        // Find matching drink
+        const key = Object.keys(counts).find(k =>
+          k.toLowerCase() === drinkName.toLowerCase() ||
+          drinkName.toLowerCase().includes(k.toLowerCase()) ||
+          k.toLowerCase().includes(drinkName.toLowerCase())
+        );
+        if (key) {
+          if (order.type === 'walkin') counts[key].walkin += qty;
+          else counts[key].preorder += qty;
+        }
+      });
+    });
+
+    // Render totals row
+    let totalPre = 0, totalWalk = 0;
+    Object.values(counts).forEach(c => { totalPre += c.preorder; totalWalk += c.walkin; });
+    totalsRow.innerHTML = `
+      <div class="demand-totals">
+        <div><div class="dt-num">${totalPre}</div><div class="dt-lbl">Pre-orders</div></div>
+        <div><div class="dt-num">${totalWalk}</div><div class="dt-lbl">Walk-ins</div></div>
+        <div><div class="dt-num" style="color:var(--gold);">${totalPre + totalWalk}</div><div class="dt-lbl">Outstanding</div></div>
+      </div>
+    `;
+
+    // Render grid cards
+    if (totalPre + totalWalk === 0) {
+      grid.innerHTML = `<div class="demand-empty" style="grid-column:1/-1;">No outstanding orders yet — you're all caught up!</div>`;
+    } else {
+      grid.innerHTML = '';
+      // Sort: highest demand first
+      const sorted = Object.entries(counts).sort((a, b) => (b[1].preorder + b[1].walkin) - (a[1].preorder + a[1].walkin));
+      sorted.forEach(([name, data]) => {
+        const total = data.preorder + data.walkin;
+        const catClass = data.cat.includes('Foam') ? 'foam' : data.cat.includes('Dairy') ? 'dairy-free' : 'whole-milk';
+        const card = document.createElement('div');
+        card.className = 'demand-card ' + catClass;
+        card.innerHTML = `
+          <div class="demand-drink-name">${name}</div>
+          <div class="demand-big-num ${total === 0 ? 'zero' : ''}">${total}</div>
+          <div class="demand-breakdown">
+            <span>${data.preorder}</span> pre · <span>${data.walkin}</span> walk-in
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    // Update timestamp
+    const now = new Date();
+    document.getElementById('demand-updated').textContent =
+      'Updated ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+    // Pulse animation
+    grid.classList.add('demand-pulse');
+    setTimeout(() => grid.classList.remove('demand-pulse'), 1000);
+
+  } catch (e) {
+    grid.innerHTML = `<div class="demand-empty" style="grid-column:1/-1;">Could not load orders.<br><span style="font-size:10px;opacity:0.6;">${e.message || 'Check connection'}</span></div>`;
+    console.error('Demand fetch error:', e);
+  }
 }
 
 // ── PROFIT BANNER ──
