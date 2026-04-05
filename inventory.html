@@ -501,6 +501,32 @@ async function renderAll() {
 
 // ══ LIVE DEMAND TRACKER ══════════════════════════════════
 
+// Map order item names (from index.html openModal) → RECIPE_DRINKS id
+const ORDER_NAME_MAP = {
+  'matcha latte (df)': 1,
+  'mango matcha latte (df)': 2,
+  'coconut matcha': 3,
+  'matcha latte (dairy)': 4,
+  'mango matcha latte (dairy)': 5,
+  'matcha with vanilla cold foam': 6,
+  'matcha with matcha cold foam': 7,
+  'matcha with banana cold foam': 8,
+  'coconut water with matcha cold foam': 9,
+};
+
+function matchDrinkName(rawText) {
+  const text = rawText.trim().toLowerCase();
+  // Sort map keys longest-first so "Mango Matcha Latte (Dairy)" matches before "Mango Matcha Latte"
+  const sorted = Object.keys(ORDER_NAME_MAP).sort((a, b) => b.length - a.length);
+  for (const name of sorted) {
+    if (text.startsWith(name)) {
+      const drink = RECIPE_DRINKS.find(d => d.id === ORDER_NAME_MAP[name]);
+      if (drink) return drink.name;
+    }
+  }
+  return null;
+}
+
 async function refreshDemand() {
   const grid = document.getElementById('demand-grid');
   const totalsRow = document.getElementById('demand-totals-row');
@@ -526,24 +552,17 @@ async function refreshDemand() {
 
     orders.forEach(order => {
       if (!order.items) return;
-      // Split items string by comma
-      const parts = order.items.split(/,\s*/);
+      // Split on commas only when followed by a new item (e.g. "2x ...")
+      // This prevents splitting on commas inside option groups like "(Whole, —, Regular)"
+      const parts = order.items.split(/,\s*(?=\d+\s*[x×])/i);
       parts.forEach(part => {
-        // Extract qty — handle "2x Name..." or "2× Name..."
         const match = part.trim().match(/^(\d+)\s*[x×]\s*(.+)/i);
         if (!match) return;
         const qty = parseInt(match[1]) || 0;
-        const rawName = match[2].trim().toLowerCase();
-
-        // Find best matching drink by checking if the raw text contains a known drink name
-        // Sort RECIPE_DRINKS by name length descending so longer (more specific) names match first
-        const sortedKeys = Object.keys(counts).sort((a, b) => b.length - a.length);
-        const key = sortedKeys.find(k => {
-          const kLower = k.toLowerCase();
-          return rawName.startsWith(kLower) || rawName.includes(kLower) || kLower.includes(rawName.replace(/\s*\([^)]*\)\s*/g, '').trim());
-        });
+        const key = matchDrinkName(match[2]);
         if (key) {
-          if (order.type === 'walkin') counts[key].walkin += qty;
+          const t = (order.type || '').toLowerCase().replace(/[^a-z]/g, '');
+          if (t === 'walkin') counts[key].walkin += qty;
           else counts[key].preorder += qty;
         }
       });
