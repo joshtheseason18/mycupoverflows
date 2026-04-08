@@ -149,7 +149,7 @@ textarea { resize:vertical; min-height:80px; }
   }
 }
 
-.toast { position:fixed; bottom:90px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--green-dark); color:var(--cream); border-radius:30px; padding:12px 22px; font-size:14px; font-weight:500; opacity:0; transition:all 0.3s; z-index:200; white-space:nowrap; pointer-events:none; }
+.toast { position:fixed; bottom:90px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--green-dark); color:var(--cream); border-radius:30px; padding:12px 22px; font-size:14px; font-weight:500; opacity:0; transition:all 0.3s; z-index:400; white-space:nowrap; pointer-events:none; }
 .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 .menu-page-content { padding-bottom:100px; }
 
@@ -540,6 +540,7 @@ function dismissSplash() {
   document.getElementById('splash').classList.add('hidden');
 }
 
+const SUPABASE_URL = 'https://aexhnoajcxmjcgnfqnsv.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFleGhub2FqY3htamNnbmZxbnN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4ODI2NTQsImV4cCI6MjA5MDQ1ODY1NH0.M8bi4X7yr-TghM7H5TGS5l3g88biJZxSWHEy8TcWIDA';
 const SHEETS_URL   = 'https://script.google.com/macros/s/AKfycbyMUP1Op7Wra8m3a25wFLH9aIsgtkorudZKOjptBiMxPYVFWnsbWwPFG6F_xXvUqJTj/exec';
 
@@ -928,11 +929,17 @@ function submitOrder() {
   window.scrollTo(0,0);
 }
 function handleZellePay() {
-  navigator.clipboard.writeText('747-306-8426').catch(()=>{});
-  document.getElementById('zelleIcon').textContent = '✓';
-  document.getElementById('zelleCard').style.borderColor = '#4a0fa8';
-  document.getElementById('zelleCopiedMsg').style.display = 'block';
-  showToast('📋 Zelle number copied!');
+  navigator.clipboard.writeText('747-306-8426').then(() => {
+    document.getElementById('zelleIcon').textContent = '✓';
+    document.getElementById('zelleCard').style.borderColor = '#4a0fa8';
+    document.getElementById('zelleCopiedMsg').style.display = 'block';
+    showToast('📋 Zelle number copied!');
+  }).catch(() => {
+    // Clipboard blocked (HTTP or browser restriction) — show number prominently
+    document.getElementById('zelleCopiedMsg').style.display = 'block';
+    document.getElementById('zelleCopiedMsg').textContent = 'Zelle: 747-306-8426 — please enter this manually in your Zelle app';
+    showToast('Zelle: 747-306-8426');
+  });
 }
 let isSubmitting = false;
 
@@ -976,7 +983,12 @@ async function confirmOrder() {
   isSubmitting = false;
   showPage('page-confirm');
 }
-function backToMenu() { showPage('page-menu'); syncCartCounters(); }
+function backToMenu() {
+  document.getElementById('orderFormSection').style.display = 'block';
+  document.getElementById('paySection').style.display = 'none';
+  showPage('page-menu');
+  syncCartCounters();
+}
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
@@ -1041,8 +1053,6 @@ window.addEventListener('load', () => {
     }
     document.getElementById('cartBar').querySelector('.cart-btn').onclick = () =>
       showToast('⏰ Pre-orders are now closed. See you next time!');
-
-    // Hide quantity buttons so people can't add to cart
     document.querySelectorAll('.qty-ctrl, .qty-btn').forEach(el => el.style.display = 'none');
     document.querySelectorAll('.menu-card .item-body').forEach(el => { el.style.cursor = 'default'; el.onclick = null; });
   }
