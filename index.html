@@ -196,16 +196,16 @@ textarea { resize:vertical; min-height:80px; }
 <!-- ══ MENU PAGE ══ -->
 <div id="page-menu" class="page active">
   <div class="hero">
-    <div class="hero-eyebrow">Easter Pop-Up</div>
+    <div class="hero-eyebrow">Matcha Pop-Up</div>
     <img src="./MCO_logo.png" alt="My Cup Overflows" style="width:280px;height:auto;object-fit:contain;margin:0 auto 4px;display:block;position:relative;z-index:1;"/>
     <div class="hero-title" style="font-size:clamp(18px,4vw,24px);">My Cup Overflows</div>
     <div class="hero-verse">Psalm 23:5</div>
     <div class="event-badge">
-      <strong>📍 Cross Culture Church</strong>
-      <span>Sunday, April 5 · 9:45–10:20am &amp; 12:00–1:00pm</span>
+      <strong>✨ Thank you for your support!</strong>
+      <span>Our last pop-up was a blessing. We'll be back soon.</span>
     </div>
     <div style="margin-top:12px;background:rgba(45,92,58,0.08);border:1px solid rgba(45,92,58,0.2);border-radius:12px;padding:10px 18px;font-size:12px;color:var(--green-dark);line-height:1.8;">
-      ⏰ Pre-orders are now closed — thank you for your support! 🍵
+      📣 The next pop-up will be announced right here — stay tuned! 🍵
     </div>
   </div>
   <div class="tab-bar">
@@ -424,11 +424,11 @@ textarea { resize:vertical; min-height:80px; }
     <div class="field-group">
       <label>Choose Pickup Time <span style="color:#cc4444;font-size:11px;">*</span></label>
       <div class="pickup-slots" id="pickupSlots">
-        <div class="slot" id="slot-morning" onclick="selectSlot(this,'Before Service · 9:45–10:20am')">
+        <div class="slot" id="slot-morning" data-slot="Before Service · 9:45–10:20am" onclick="selectSlot(this,'Before Service · 9:45–10:20am')">
           <div class="slot-label" style="font-weight:600;font-size:15px;color:var(--text);">Before Service</div>
           <div class="slot-cutoff" id="morning-cutoff">9:45 – 10:20am</div>
         </div>
-        <div class="slot" id="slot-afternoon" onclick="selectSlot(this,'After Service · 12:00–1:00pm')">
+        <div class="slot" id="slot-afternoon" data-slot="After Service · 12:00–1:00pm" onclick="selectSlot(this,'After Service · 12:00–1:00pm')">
           <div class="slot-label" style="font-weight:600;font-size:15px;color:var(--text);">After Service</div>
           <div class="slot-cutoff">12:00 – 1:00pm</div>
         </div>
@@ -535,7 +535,11 @@ textarea { resize:vertical; min-height:80px; }
 <div class="toast" id="toast"></div>
 
 <script>
-const SUPABASE_URL = 'https://aexhnoajcxmjcgnfqnsv.supabase.co';
+// ── SPLASH ── (global so onclick="dismissSplash()" works)
+function dismissSplash() {
+  document.getElementById('splash').classList.add('hidden');
+}
+
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFleGhub2FqY3htamNnbmZxbnN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4ODI2NTQsImV4cCI6MjA5MDQ1ODY1NH0.M8bi4X7yr-TghM7H5TGS5l3g88biJZxSWHEy8TcWIDA';
 const SHEETS_URL   = 'https://script.google.com/macros/s/AKfycbyMUP1Op7Wra8m3a25wFLH9aIsgtkorudZKOjptBiMxPYVFWnsbWwPFG6F_xXvUqJTj/exec';
 
@@ -554,7 +558,6 @@ function saveState() {
       firstName: document.getElementById('custFirstName')?.value || '',
       lastName:  document.getElementById('custLastName')?.value  || '',
       phone:     document.getElementById('custPhone')?.value     || '',
-      notes:     document.getElementById('custNotes')?.value     || '',
     };
     localStorage.setItem('mco_cart_state', JSON.stringify(state));
   } catch(e) {}
@@ -578,11 +581,9 @@ function restoreState() {
     const fn = document.getElementById('custFirstName');
     const ln = document.getElementById('custLastName');
     const ph = document.getElementById('custPhone');
-    const no = document.getElementById('custNotes');
     if (fn) fn.value = state.firstName || '';
     if (ln) ln.value = state.lastName  || '';
     if (ph) ph.value = state.phone     || '';
-    if (no) no.value = state.notes     || '';
 
     // Restore slot highlight
     if (selectedSlot) {
@@ -662,7 +663,7 @@ function syncCartCounters() {
   // Then set correct values from cart
   Object.values(cart).forEach(({ id, name, qty }) => {
     // Match by id first, fallback to name-based IDs
-    const byId = document.getElementById('qty-' + id);
+    const byId = document.getElementById(id);
     if (byId) {
       byId.textContent = (parseInt(byId.textContent) || 0) + qty;
     }
@@ -841,15 +842,39 @@ function removeFromSummary(key) {
   }
 }
 function initSlots() {
-  // Morning slot closes at 10:20am on April 5
-  const cutoff = new Date('2026-04-05T10:20:00');
   const now = new Date();
-  if (now >= cutoff) {
+
+  // ── IMPORTANT: Update these dates for each new event ──
+  const EVENT_DATE = new Date().toLocaleDateString('en-CA'); // defaults to today; override per event
+
+  // Morning slot closes when pickup begins
+  const morningCutoff  = new Date(EVENT_DATE + 'T09:45:00');
+  // Afternoon slot closes when pickup begins
+  const afternoonCutoff = new Date(EVENT_DATE + 'T12:00:00');
+
+  if (now >= morningCutoff) {
     const morningSlot = document.getElementById('slot-morning');
     morningSlot.classList.add('disabled');
     morningSlot.onclick = null;
     document.getElementById('morning-cutoff').textContent = 'Closed';
     document.getElementById('slot-notice').style.display = 'block';
+    // Clear selection if this slot was already chosen
+    if (selectedSlot && selectedSlot.toLowerCase().includes('before')) {
+      selectedSlot = '';
+      saveState();
+    }
+  }
+
+  if (now >= afternoonCutoff) {
+    const afternoonSlot = document.getElementById('slot-afternoon');
+    afternoonSlot.classList.add('disabled');
+    afternoonSlot.onclick = null;
+    document.getElementById('slot-afternoon').querySelector('.slot-cutoff').textContent = 'Closed';
+    // Clear selection if this slot was already chosen
+    if (selectedSlot && selectedSlot.toLowerCase().includes('after')) {
+      selectedSlot = '';
+      saveState();
+    }
   }
 }
 function selectSlot(el, slot) {
@@ -869,6 +894,14 @@ function submitOrder() {
   if (!phone) { showToast('Please enter your phone number'); return; }
   const digitsOnly = phone.replace(/\D/g, '');
   if (digitsOnly.length !== 10) { showToast('Please enter a valid 10-digit phone number'); return; }
+
+  // If both slots are disabled, ordering is fully closed — show clear message
+  const allDisabled = [...document.querySelectorAll('.slot')].every(s => s.classList.contains('disabled'));
+  if (allDisabled) {
+    showToast('⏰ Pre-orders are now closed for this event');
+    return;
+  }
+
   if (!selectedSlot) {
     document.getElementById('slot-error').style.display = 'block';
     document.querySelectorAll('.slot:not(.disabled)').forEach(s => s.classList.add('error'));
@@ -901,27 +934,34 @@ function handleZellePay() {
   document.getElementById('zelleCopiedMsg').style.display = 'block';
   showToast('📋 Zelle number copied!');
 }
+let isSubmitting = false;
+
 async function confirmOrder() {
   if (!currentOrder) return;
+  if (isSubmitting) return; // prevent double-tap
+  isSubmitting = true;
   const btn = document.querySelector('.submit-btn[onclick="confirmOrder()"]');
   if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
   const ok = await supabaseInsert(currentOrder);
   if (!ok) {
     showToast('⚠️ Connection issue — please try again');
     if (btn) { btn.disabled = false; btn.textContent = "I've Paid — Confirm Order ✓"; }
+    isSubmitting = false;
     return;
   }
   // Clear saved order state
   sessionStorage.removeItem('mco_pending_order');
   clearState();
   logToSheets(currentOrder);
-  const itemLines = currentOrder.items.split(', ').map(i =>
-    `<div class="confirm-row"><span>${i}</span></div>`
+  const safeName  = currentOrder.name.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const safeSlot  = currentOrder.slot.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const safeItems = currentOrder.items.split(', ').map(i =>
+    `<div class="confirm-row"><span>${i.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span></div>`
   ).join('');
-  document.getElementById('confirmDetails').innerHTML = `${itemLines}
+  document.getElementById('confirmDetails').innerHTML = `${safeItems}
     <div class="confirm-row"><span>Total</span><strong style="color:var(--green-dark)">$${currentOrder.total}</strong></div>
-    <div class="confirm-row"><span>Pickup</span><strong>${currentOrder.slot}</strong></div>
-    <div class="confirm-row"><span>Name</span><strong>${currentOrder.name}</strong></div>`;
+    <div class="confirm-row"><span>Pickup</span><strong>${safeSlot}</strong></div>
+    <div class="confirm-row"><span>Name</span><strong>${safeName}</strong></div>`;
   cart = {};
   selectedSlot = '';
   document.querySelectorAll('.qty-num').forEach(el => el.textContent = '0');
@@ -933,6 +973,7 @@ async function confirmOrder() {
   document.getElementById('orderFormSection').style.display = 'block';
   document.getElementById('paySection').style.display = 'none';
   currentOrder = null;
+  isSubmitting = false;
   showPage('page-confirm');
 }
 function backToMenu() { showPage('page-menu'); syncCartCounters(); }
@@ -966,7 +1007,7 @@ window.addEventListener('load', () => {
   }
 
   // Wire saveState to all form inputs so any change is persisted
-  ['custFirstName','custLastName','custPhone','custNotes'].forEach(id => {
+  ['custFirstName','custLastName','custPhone'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('input', saveState);
   });
@@ -974,10 +1015,6 @@ window.addEventListener('load', () => {
   // Splash: dismiss when video ends, show skip after 1.5s
   const video = document.getElementById('splashVideo');
   const skip  = document.getElementById('splashSkip');
-
-  function dismissSplash() {
-    document.getElementById('splash').classList.add('hidden');
-  }
 
   if (video) {
     setTimeout(dismissSplash, 3000);
@@ -988,20 +1025,29 @@ window.addEventListener('load', () => {
   }
 
   initSlots();
+  // Re-check slot cutoffs every 30s in case page was loaded before a cutoff
+  setInterval(initSlots, 30000);
 
-  // ── All pre-ordering closed ──
-  const orderTab = document.querySelector('.tab[onclick="showTab(\'order\')"]');
-  if (orderTab) {
-    orderTab.onclick = () => showToast('⏰ Pre-orders are now closed. See you next time!');
-    orderTab.style.opacity = '0.5';
+  // ── All pre-ordering closed (only after afternoon slot ends at 1:00pm) ──
+  // Uses its own `now` so it is always correctly evaluated
+  const now = new Date();
+  const EVENT_DATE_CLOSE = new Date().toLocaleDateString('en-CA');
+  const allClosed = new Date(EVENT_DATE_CLOSE + 'T13:00:00');
+  if (now >= allClosed) {
+    const orderTab = document.querySelector('.tab[onclick="showTab(\'order\')"]');
+    if (orderTab) {
+      orderTab.onclick = () => showToast('⏰ Pre-orders are now closed. See you next time!');
+      orderTab.style.opacity = '0.5';
+    }
+    document.getElementById('cartBar').querySelector('.cart-btn').onclick = () =>
+      showToast('⏰ Pre-orders are now closed. See you next time!');
+
+    // Hide quantity buttons so people can't add to cart
+    document.querySelectorAll('.qty-ctrl, .qty-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.menu-card .item-body').forEach(el => { el.style.cursor = 'default'; el.onclick = null; });
   }
-  document.getElementById('cartBar').querySelector('.cart-btn').onclick = () =>
-    showToast('⏰ Pre-orders are now closed. See you next time!');
-
-  // Hide quantity buttons so people can't add to cart
-  document.querySelectorAll('.qty-ctrl, .qty-btn').forEach(el => el.style.display = 'none');
-  document.querySelectorAll('.menu-card .item-body').forEach(el => { el.style.cursor = 'default'; el.onclick = null; });
 });
+
 
 function formatPhone(input) {
   let val = input.value.replace(/\D/g,'');

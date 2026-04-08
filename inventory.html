@@ -295,7 +295,7 @@ textarea.f-input { resize:vertical; min-height:72px; }
     <!-- Profit Banner -->
     <div class="profit-banner">
       <div class="profit-card">
-        <div class="profit-label">Revenue</div>
+        <div class="profit-label">Today's Revenue</div>
         <div class="profit-num green" id="p-revenue">$0</div>
       </div>
       <div class="profit-card">
@@ -303,7 +303,7 @@ textarea.f-input { resize:vertical; min-height:72px; }
         <div class="profit-num red" id="p-cost">$0</div>
       </div>
       <div class="profit-card">
-        <div class="profit-label">Net Profit</div>
+        <div class="profit-label">Today's Profit</div>
         <div class="profit-num gold" id="p-profit">$0</div>
       </div>
     </div>
@@ -622,12 +622,15 @@ async function refreshDemand() {
 async function renderProfitBanner() {
   let revenue = 0;
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/orders?select=total`, {
+    const today = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/orders?select=total,created_at`, {
       headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
     });
     if (res.ok) {
       const data = await res.json();
-      revenue = data.reduce((s, o) => s + (o.total || 0), 0);
+      revenue = data
+        .filter(o => o.created_at && o.created_at.startsWith(today))
+        .reduce((s, o) => s + (o.total || 0), 0);
     }
   } catch(e) {}
   const totalCost = calcEstimatedCost();

@@ -195,24 +195,28 @@ body { font-family:'Jost',sans-serif; background:var(--green-dark); color:var(--
       <div>
         <div class="hero-eyebrow">Owner Dashboard</div>
         <div class="hero-title">My Cup Overflows</div>
-        <div class="hero-sub">Sunday, April 5 · Cross Culture Church</div>
+        <div class="hero-sub" id="hero-date"></div>
       </div>
     </div>
     <!-- Total Revenue Banner -->
     <div style="margin-top:18px;background:rgba(45,92,58,0.08);border:1px solid rgba(45,92,58,0.2);border-radius:16px;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:1;">
       <div>
-        <div style="font-size:10px;letter-spacing:0.3em;color:var(--green-dark);text-transform:uppercase;margin-bottom:4px;">Total Revenue</div>
+        <div style="font-size:10px;letter-spacing:0.3em;color:var(--green-dark);text-transform:uppercase;margin-bottom:4px;">Today's Revenue</div>
         <div style="font-family:'DM Serif Display',serif;font-size:36px;color:var(--text);line-height:1;" id="total-revenue">$0</div>
       </div>
       <div style="text-align:right;">
-        <div style="font-size:10px;letter-spacing:0.2em;color:var(--text-mid);text-transform:uppercase;margin-bottom:4px;">Total Orders</div>
+        <div style="font-size:10px;letter-spacing:0.2em;color:var(--text-mid);text-transform:uppercase;margin-bottom:4px;">Today's Orders</div>
         <div style="font-family:'DM Serif Display',serif;font-size:28px;color:var(--text);line-height:1;" id="total-orders">0</div>
       </div>
+      
     </div>
   </div>
   <div class="top-bar">
     <button class="logout-btn" onclick="logout()">← Log out</button>
-    <a href="inventory.html" style="font-size:11px;color:var(--green-dark);background:rgba(45,92,58,0.08);border:1px solid rgba(45,92,58,0.25);border-radius:8px;padding:5px 12px;text-decoration:none;">📦 Inventory</a>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button id="historyToggleBtn" onclick="toggleHistoryMode()" style="font-size:11px;color:var(--text-mid);background:none;border:1px solid rgba(45,92,58,0.3);border-radius:8px;padding:5px 12px;cursor:pointer;">📅 All Time</button>
+      <a href="inventory.html" style="font-size:11px;color:var(--green-dark);background:rgba(45,92,58,0.08);border:1px solid rgba(45,92,58,0.25);border-radius:8px;padding:5px 12px;text-decoration:none;">📦 Inventory</a>
+    </div>
   </div>
 
   <!-- Main tabs -->
@@ -290,10 +294,11 @@ body { font-family:'Jost',sans-serif; background:var(--green-dark); color:var(--
       </div>
     </div></div>
 
-    <!-- Clear all for testing -->
+    <!-- Local view reset only -->
     <div style="margin-top:20px;padding-top:16px;border-top:2px dashed var(--cream-dark);text-align:center;">
-      <div style="font-size:10px;letter-spacing:0.2em;color:var(--text-soft);text-transform:uppercase;margin-bottom:10px;">Testing Only</div>
-      <button class="btn btn-delete" onclick="clearAllPreorders()">🗑 Clear All Pre-Orders</button>
+      <div style="font-size:10px;letter-spacing:0.2em;color:var(--text-soft);text-transform:uppercase;margin-bottom:6px;">View Only</div>
+      <div style="font-size:11px;color:var(--text-soft);margin-bottom:10px;line-height:1.5;">Hides pre-orders from this screen only.<br/>No data is deleted from the database.</div>
+      <button class="btn btn-picked" onclick="clearLocalPreorderView()">🙈 Hide All Pre-Orders (Local)</button>
     </div>
   </div>
 
@@ -386,6 +391,685 @@ const PASSWORD    = 'psalm23';
 const SUPABASE_URL = 'https://aexhnoajcxmjcgnfqnsv.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFleGhub2FqY3htamNnbmZxbnN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4ODI2NTQsImV4cCI6MjA5MDQ1ODY1NH0.M8bi4X7yr-TghM7H5TGS5l3g88biJZxSWHEy8TcWIDA';
 const SHEETS_URL   = 'https://script.google.com/macros/s/AKfycbyMUP1Op7Wra8m3a25wFLH9aIsgtkorudZKOjptBiMxPYVFWnsbWwPFG6F_xXvUqJTj/exec';
+
+let orders = [];
+let allOrders = [];          // full unfiltered set from Supabase
+let viewingHistory = false;  // false = today only, true = all time
+let hiddenPreorderIds = [];  // IDs hidden locally (not deleted from Supabase)
+
+// ── TODAY HELPERS ──
+function todayStr() {
+  return new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
+}
+function isToday(isoString) {
+  if (!isoString) return false;
+  return isoString.startsWith(todayStr());
+}
+
+// ── SUPABASE ──
+async function sbFetch(path, opts={}) {
+  const { method='GET', body, prefer } = opts;
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    method,
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': prefer || 'return=representation'
+    },
+    ...(body ? { body } : {})
+  });
+  if (!res.ok) { console.error('Supabase error', res.status, await res.text()); return null; }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+async function loadOrders() {
+  const data = await sbFetch('orders?select=*&order=created_at.asc');
+  if (data) {
+    allOrders = data.map(o => ({
+      id:      o.id,
+      name:    o.name,
+      phone:   o.phone,
+      slot:    o.slot,
+      items:   o.items,
+      total:   o.total,
+      status:  o.status,
+      type:    o.type,
+      notes:   o.notes || '',
+      time:    o.created_at ? new Date(o.created_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '',
+      date:    o.created_at ? o.created_at.slice(0,10) : '',
+      walkin:  o.type === 'walkin'
+    }));
+    applyDateFilter();
+  }
+}
+
+function applyDateFilter() {
+  if (viewingHistory) {
+    orders = allOrders;
+  } else {
+    orders = allOrders.filter(o => isToday(o.date));
+  }
+  // Apply local hidden list on top
+  orders = orders.filter(o => !hiddenPreorderIds.includes(o.id));
+}
+
+async function sbUpdate(id, data) {
+  return await sbFetch(`orders?id=eq.${id}`, {
+    method: 'PATCH',
+    prefer: 'return=minimal',
+    body: JSON.stringify(data)
+  });
+}
+
+async function sbInsert(data) {
+  return await sbFetch('orders', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+}
+
+async function sbDelete(id) {
+  return await sbFetch(`orders?id=eq.${id}`, {
+    method: 'DELETE',
+    prefer: 'return=minimal'
+  });
+}
+
+function logToSheets(order) {
+  fetch(SHEETS_URL, {
+    method:'POST', mode:'no-cors',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({ timestamp:new Date().toLocaleString(), type:order.type==='walkin'?'Walk-in':'Pre-Order', name:order.name, phone:order.phone, items:order.items, total:order.total, slot:order.slot, status:order.status })
+  }).catch(()=>{});
+}
+
+const MENU = [
+  { name:'#1 Matcha Latte (Oat Milk)',              price:6 },
+  { name:'#2 Mango Matcha Latte (Oat Milk)',        price:6 },
+  { name:'#3 Coconut Matcha (Dairy Free)',           price:6 },
+  { name:'#4 Matcha Latte (Whole Milk)',             price:6 },
+  { name:'#5 Mango Matcha Latte (Whole Milk)',      price:6 },
+  { name:'#6 Matcha w/ Vanilla Cold Foam',          price:7 },
+  { name:'#7 Matcha w/ Matcha Cold Foam',           price:7 },
+  { name:'#8 Matcha w/ Banana Cold Foam',           price:7 },
+  { name:'#9 Coconut Water w/ Matcha Cold Foam',    price:7 },
+];
+
+// ── AUTH ──
+function tryLogin() {
+  if (document.getElementById('passInput').value === PASSWORD) {
+    document.getElementById('lockScreen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    loadDashboard();
+  } else {
+    document.getElementById('lockError').textContent = 'Incorrect password. Try again.';
+    document.getElementById('passInput').value = '';
+    document.getElementById('passInput').focus();
+  }
+}
+function logout() {
+  clearInterval(window._refresh);
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('lockScreen').style.display = 'flex';
+  document.getElementById('passInput').value = '';
+  document.getElementById('lockError').textContent = '';
+}
+
+// ── HISTORY TOGGLE ──
+function toggleHistoryMode() {
+  viewingHistory = !viewingHistory;
+  const btn = document.getElementById('historyToggleBtn');
+  btn.textContent = viewingHistory ? '📅 Today Only' : '📅 All Time';
+  btn.style.color = viewingHistory ? 'var(--gold)' : 'var(--text-mid)';
+  btn.style.borderColor = viewingHistory ? 'var(--gold)' : 'rgba(45,92,58,0.3)';
+  applyDateFilter();
+  renderAll();
+  showToast(viewingHistory ? 'Showing all-time data' : 'Showing today\'s data');
+}
+
+// ── LOAD ──
+async function loadDashboard() {
+  // Set dynamic date in hero
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' });
+  document.getElementById('hero-date').textContent = dateStr + ' · My Cup Overflows';
+
+  showToast('Loading orders...');
+  await loadOrders();
+  renderAll();
+  clearInterval(window._refresh);
+  window._refresh = setInterval(async () => {
+    await loadOrders();
+    renderAll();
+  }, 15000);
+}
+
+// ── TABS ──
+function switchTab(tab) {
+  document.getElementById('panel-walkin').style.display    = tab === 'walkin'   ? 'block' : 'none';
+  document.getElementById('panel-preorder').style.display  = tab === 'preorder' ? 'block' : 'none';
+  document.getElementById('panel-allsales').style.display  = tab === 'allsales' ? 'block' : 'none';
+  document.getElementById('tab-walkin').classList.toggle('active',   tab === 'walkin');
+  document.getElementById('tab-preorder').classList.toggle('active', tab === 'preorder');
+  document.getElementById('tab-allsales').classList.toggle('active', tab === 'allsales');
+}
+
+// ── RENDER ALL ──
+function renderAll() {
+  renderWalkins();
+  renderPreorders();
+  renderAllSales();
+  const walkins    = orders.filter(o => o.walkin);
+  const actionable = orders.filter(o => !o.walkin && (o.status === 'pending' || o.status === 'confirmed'));
+  document.getElementById('badge-walkin').textContent   = walkins.length;
+  document.getElementById('badge-preorder').textContent = actionable.length;
+  const totalRev    = orders.reduce((s,o) => s + o.total, 0);
+  const totalOrders = orders.length;
+  document.getElementById('total-revenue').textContent = '$' + totalRev;
+  document.getElementById('total-orders').textContent  = totalOrders;
+}
+
+// ── WALK-INS ──
+function renderWalkins() {
+  const list = orders.filter(o => o.walkin).reverse();
+  const revenue = list.reduce((s,o)=>s+o.total,0);
+  const drinks  = list.reduce((s,o)=>s + (o.items||'').split(',').length ,0);
+  document.getElementById('wi-count').textContent   = list.length;
+  document.getElementById('wi-revenue').textContent = '$'+revenue;
+  document.getElementById('wi-drinks').textContent  = drinks;
+
+  const el = document.getElementById('walkin-list');
+  if (!list.length) { el.innerHTML = `<div class="empty-state"><div class="e-icon">🚶</div>${viewingHistory ? 'No walk-ins on record.' : 'No walk-ins yet today. Tap above to log one.'}</div>`; return; }
+  el.innerHTML = '';
+  list.forEach(o => {
+    const itemsHtml = (o.items||'').split(',').map(i=>`<div>${i.trim()}</div>`).join('');
+    const card = document.createElement('div');
+    card.className = 'order-card s-walkin';
+    card.innerHTML = `
+      <div class="order-top-row">
+        <div class="order-name">${o.name}</div>
+        <span class="tag tag-walkin">Walk-in${o.date && !isToday(o.date) ? ' · '+o.date : ''}</span>
+      </div>
+      <div class="order-slot">${o.time}</div>
+      <div class="order-items">${itemsHtml}</div>
+      <div class="order-footer">
+        <div class="order-amount">$${o.total}</div>
+        <div class="order-actions">
+          <button class="btn btn-delete" onclick="deleteOrder(${o.id})">🗑</button>
+        </div>
+      </div>`;
+    el.appendChild(card);
+  });
+}
+
+// ── PRE-ORDERS — split by slot ──
+function renderPreorders() {
+  const all = orders.filter(o => !o.walkin);
+  const isMorning   = o => o.slot && o.slot.toLowerCase().includes('before');
+  const isAfternoon = o => o.slot && !o.slot.toLowerCase().includes('before');
+
+  const morning   = all.filter(isMorning);
+  const afternoon = all.filter(isAfternoon);
+
+  document.getElementById('po-received').textContent  = all.filter(o=>o.status==='pending').length;
+  document.getElementById('po-confirmed').textContent = all.filter(o=>o.status==='confirmed').length;
+  document.getElementById('po-ready').textContent     = all.filter(o=>o.status==='ready').length;
+
+  document.getElementById('badge-morning').textContent          = morning.filter(o=>o.status!=='picked').length;
+  document.getElementById('sc-morning-received').textContent    = morning.filter(o=>o.status==='pending').length;
+  document.getElementById('sc-morning-confirmed').textContent   = morning.filter(o=>o.status==='confirmed').length;
+  document.getElementById('sc-morning-ready').textContent       = morning.filter(o=>o.status==='ready'||o.status==='picked').length;
+
+  document.getElementById('badge-afternoon').textContent        = afternoon.filter(o=>o.status!=='picked').length;
+  document.getElementById('sc-afternoon-received').textContent  = afternoon.filter(o=>o.status==='pending').length;
+  document.getElementById('sc-afternoon-confirmed').textContent = afternoon.filter(o=>o.status==='confirmed').length;
+  document.getElementById('sc-afternoon-ready').textContent     = afternoon.filter(o=>o.status==='ready'||o.status==='picked').length;
+
+  fillSubcat('list-morning-received',   morning.filter(o=>o.status==='pending').reverse(),                          'pending',   '📭', 'No orders yet.');
+  fillSubcat('list-morning-confirmed',  morning.filter(o=>o.status==='confirmed').reverse(),                        'confirmed', '💳', 'No confirmed payments.');
+  fillSubcat('list-morning-ready',      morning.filter(o=>o.status==='ready'||o.status==='picked').reverse(),       'ready',     '🟢', 'No orders ready yet.');
+  fillSubcat('list-afternoon-received', afternoon.filter(o=>o.status==='pending').reverse(),                        'pending',   '📭', 'No orders yet.');
+  fillSubcat('list-afternoon-confirmed',afternoon.filter(o=>o.status==='confirmed').reverse(),                      'confirmed', '💳', 'No confirmed payments.');
+  fillSubcat('list-afternoon-ready',    afternoon.filter(o=>o.status==='ready'||o.status==='picked').reverse(),     'ready',     '🟢', 'No orders ready yet.');
+}
+
+// ── ALL SALES ──
+function renderAllSales() {
+  const walkins   = orders.filter(o => o.walkin);
+  const preorders = orders.filter(o => !o.walkin);
+  const revenue   = orders.reduce((s,o)=>s+o.total,0);
+  const drinks    = orders.reduce((s,o) => s + (o.items||'').split(',').length, 0);
+
+  document.getElementById('all-orders').textContent  = orders.length;
+  document.getElementById('all-revenue').textContent = '$'+revenue;
+  document.getElementById('all-drinks').textContent  = drinks;
+  document.getElementById('sc-all-walkin').textContent   = walkins.length;
+  document.getElementById('sc-all-preorder').textContent = preorders.length;
+
+  const wiEl = document.getElementById('list-all-walkin');
+  if (!walkins.length) {
+    wiEl.innerHTML = `<div class="empty-state" style="padding:16px;"><div class="e-icon" style="font-size:24px;">🚶</div>${viewingHistory ? 'No walk-ins on record.' : 'No walk-ins today.'}</div>`;
+  } else {
+    wiEl.innerHTML = '';
+    [...walkins].reverse().forEach(o => {
+      const itemsHtml = (o.items||'').split(',').map(i=>i.trim()).join(', ');
+      const card = document.createElement('div');
+      card.className = 'order-card s-walkin';
+      card.innerHTML = `
+        <div class="order-top-row">
+          <div class="order-name">${o.name}</div>
+          <span class="tag tag-walkin">Walk-in${o.date && !isToday(o.date) ? ' · '+o.date : ''}</span>
+        </div>
+        <div class="order-slot">${o.time}</div>
+        <div class="order-items">${itemsHtml}</div>
+        <div class="order-footer">
+          <div class="order-amount">$${o.total}</div>
+        </div>`;
+      wiEl.appendChild(card);
+    });
+  }
+
+  const poEl = document.getElementById('list-all-preorder');
+  if (!preorders.length) {
+    poEl.innerHTML = `<div class="empty-state" style="padding:16px;"><div class="e-icon" style="font-size:24px;">📦</div>${viewingHistory ? 'No pre-orders on record.' : 'No pre-orders today.'}</div>`;
+  } else {
+    poEl.innerHTML = '';
+    const statusLabels = { pending:'Pending', confirmed:'Confirmed', ready:'Ready ✓', picked:'Picked Up' };
+    [...preorders].reverse().forEach(o => {
+      const itemsHtml = (o.items||'').split(',').map(i=>i.trim()).join(', ');
+      const card = document.createElement('div');
+      card.className = `order-card s-${o.status}`;
+      card.innerHTML = `
+        <div class="order-top-row"><div class="order-name">${o.name}</div><span class="tag tag-preorder">${statusLabels[o.status]||o.status}</span></div>
+        <div class="order-slot">📍 ${o.slot} · ${o.time}${o.date && !isToday(o.date) ? ' · '+o.date : ''}</div>
+        <div class="order-items">${itemsHtml}</div>
+        <div class="order-footer"><div class="order-amount">$${o.total}</div></div>`;
+      poEl.appendChild(card);
+    });
+  }
+}
+
+// ── LOCAL-ONLY CLEAR (no Supabase delete) ──
+function clearLocalPreorderView() {
+  const preorders = orders.filter(o => !o.walkin);
+  if (!preorders.length) { showToast('No pre-orders to hide'); return; }
+  if (!confirm(`Hide ${preorders.length} pre-order(s) from this view?\n\nThis does NOT delete them from the database.`)) return;
+  preorders.forEach(o => {
+    if (!hiddenPreorderIds.includes(o.id)) hiddenPreorderIds.push(o.id);
+  });
+  applyDateFilter();
+  renderAll();
+  showToast('🙈 Pre-orders hidden locally — data is safe');
+}
+
+function parseItemNumber(itemStr) {
+  const match = itemStr.match(/^(#\d+)/);
+  return match ? match[1] : '';
+}
+function parseItemSweetness(itemStr) {
+  const match = itemStr.match(/\(([^)]+)\)\s*$/);
+  return match ? match[1] : '';
+}
+function parseItemQty(itemStr) {
+  const match = itemStr.match(/^(\d+)x\s*/);
+  return match ? match[1] : '1';
+}
+function parseItemBody(itemStr) {
+  return itemStr.replace(/^\d+x\s*/, '');
+}
+
+const ITEM_NUMBERS = {
+  'matcha latte (df)':                       '#1',
+  'matcha latte (oat milk)':                 '#1',
+  'mango matcha latte (df)':                 '#2',
+  'mango matcha latte (oat milk)':           '#2',
+  'coconut matcha':                          '#3',
+  'matcha latte (dairy)':                    '#4',
+  'matcha latte (whole milk)':               '#4',
+  'matcha latte':                            '#4',
+  'mango matcha latte (dairy)':              '#5',
+  'mango matcha latte (whole milk)':         '#5',
+  'mango matcha latte':                      '#5',
+  'matcha with vanilla cold foam':           '#6',
+  'matcha w/ vanilla cold foam':             '#6',
+  'matcha with matcha cold foam':            '#7',
+  'matcha w/ matcha cold foam':              '#7',
+  'matcha with banana cold foam':            '#8',
+  'matcha w/ banana cold foam':              '#8',
+  'coconut water with matcha cold foam':     '#9',
+  'coconut water w/ matcha cold foam':       '#9',
+};
+
+function getItemNumber(nameStr) {
+  const clean = nameStr.toLowerCase().trim();
+  const sorted = Object.entries(ITEM_NUMBERS).sort((a, b) => b[0].length - a[0].length);
+  for (const [key, num] of sorted) {
+    if (clean.includes(key)) return num;
+  }
+  return '';
+}
+
+function buildItemsHtml(itemsString) {
+  return (itemsString||'').split(',').map(raw => {
+    const item      = raw.trim();
+    const qty       = parseItemQty(item);
+    const body      = parseItemBody(item);
+    const sweetness = parseItemSweetness(body);
+    const nameOnly  = body.replace(/\s*\([^)]+\)\s*$/, '').trim();
+    const num       = getItemNumber(nameOnly) || parseItemNumber(body);
+    const displayName = nameOnly.replace(/^#\d+\s*[-–]?\s*/, '').trim();
+    return `
+      <div style="display:flex;align-items:flex-start;gap:6px;padding:4px 0;border-bottom:1px solid var(--cream-dark);">
+        <div style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--green-dark);line-height:1;min-width:32px;font-weight:700;">${num}</div>
+        <div style="flex:1;">
+          <div style="font-size:11px;font-weight:600;color:var(--text);">${qty}× ${displayName}</div>
+          ${sweetness ? `<div style="font-size:10px;color:var(--text-soft);">${sweetness}</div>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function fillSubcat(listId, items, type, icon, emptyMsg) {
+  const el = document.getElementById(listId);
+  if (!items.length) { el.innerHTML = `<div class="empty-state" style="padding:16px 12px;"><div class="e-icon" style="font-size:24px;">${icon}</div>${emptyMsg}</div>`; return; }
+  el.innerHTML = '';
+  items.forEach(o => {
+    const itemsHtml = buildItemsHtml(o.items);
+
+    let actionBtn = '';
+    if (o.status === 'pending')   actionBtn = `<button class="btn btn-confirm" style="width:100%;margin-top:6px;font-size:11px;" onclick="confirmPayment(${o.id})">✅ Confirm</button>`;
+    if (o.status === 'confirmed') actionBtn = `<button class="btn btn-ready"   style="width:100%;margin-top:6px;font-size:11px;" onclick="markReady(${o.id})">🔔 Notify</button>`;
+    if (o.status === 'ready')     actionBtn = `<button class="btn btn-picked"  style="width:100%;margin-top:6px;font-size:11px;" onclick="markPickedUp(${o.id})">✓ Picked Up</button>`;
+
+    const card = document.createElement('div');
+    card.className = `order-card s-${o.status}`;
+    card.style.cssText = 'padding:10px 10px 8px;';
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;margin-bottom:4px;">
+        <div class="order-name" style="font-size:14px;word-break:break-word;min-width:0;flex:1;">${o.name}</div>
+        <div style="display:flex;gap:4px;flex-shrink:0;">
+          <button class="btn btn-ticket" style="padding:4px 7px;font-size:12px;" onclick="openTicket(${o.id})">🎫</button>
+          <button class="btn btn-edit-order" style="padding:4px 7px;font-size:12px;" onclick="openEditOrder(${o.id})">✏️</button>
+          <button class="btn btn-delete" style="padding:4px 7px;font-size:12px;" onclick="event.stopPropagation();deletePreorder(${o.id},event)">🗑</button>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--text-soft);margin-bottom:6px;">⏱ ${o.time} · $${o.total}</div>
+      <div style="margin-bottom:2px;">${itemsHtml}</div>
+      ${o.notes ? `<div class="order-notes" style="font-size:11px;margin-top:4px;">📝 ${o.notes}</div>` : ''}
+      ${actionBtn}`;
+    el.appendChild(card);
+  });
+}
+
+// ── ACTIONS ──
+async function confirmPayment(id) {
+  await sbUpdate(id, { status:'confirmed' });
+  await loadOrders(); renderAll();
+  const o = orders.find(o=>o.id===id); if (!o) return;
+  logToSheets({...o, status:'confirmed'});
+  const name = o.name.split(' ')[0];
+  const msg = encodeURIComponent(`Hey ${name}! 🍵 We received your payment — we'll text you when your order is ready for pickup!`);
+  window.open(`sms:${o.phone}?&body=${msg}`);
+  showToast('✅ Payment confirmed!');
+}
+
+async function markReady(id) {
+  await sbUpdate(id, { status:'ready' });
+  await loadOrders(); renderAll();
+  const o = orders.find(o=>o.id===id); if (!o) return;
+  const name = o.name.split(' ')[0];
+  const msg = encodeURIComponent(`Hey ${name}! ✅ Your matcha order is ready for pickup! Come grab it 🍵`);
+  window.open(`sms:${o.phone}?&body=${msg}`);
+  showToast('🔔 Customer notified — order ready!');
+}
+
+async function markPickedUp(id) {
+  await sbUpdate(id, { status:'picked' });
+  await loadOrders(); renderAll();
+  showToast('✓ Picked up!');
+}
+
+async function clearPickedUp() {
+  const picked = orders.filter(o => o.status==='picked' && !o.walkin);
+  for (const o of picked) await sbDelete(o.id);
+  await loadOrders(); renderAll();
+  showToast('Cleared picked-up orders');
+}
+
+async function deletePreorder(id, event) {
+  if (event) event.stopPropagation();
+  await sbDelete(id);
+  await loadOrders(); renderAll();
+  showToast('🗑 Pre-order deleted');
+}
+
+async function deleteOrder(id) {
+  if (!confirm('Delete this walk-in? Cannot be undone.')) return;
+  await sbDelete(id);
+  await loadOrders(); renderAll();
+  showToast('🗑 Deleted');
+}
+
+// ── WALK-IN MODAL ──
+let wiSelectedItem = null;
+let wiCartLines = [];
+
+function openWalkin() {
+  wiCartLines = [];
+  document.getElementById('wi-first').value = '';
+  document.getElementById('wi-last').value = '';
+  buildWalkinItems();
+  renderWiCart();
+  document.getElementById('walkinOverlay').classList.add('open');
+}
+
+function buildWalkinItems() {
+  const c = document.getElementById('walkinItems');
+  c.innerHTML = '';
+  MENU.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'wi-item';
+    div.innerHTML = `
+      <div>
+        <div class="wi-item-name">${item.name}</div>
+        <div class="wi-item-price">$${item.price}</div>
+      </div>
+      <button class="wqb plus" onclick="openSweetnessPicker('${item.name}',${item.price})">+</button>`;
+    c.appendChild(div);
+  });
+}
+
+function openSweetnessPicker(name, price) {
+  wiSelectedItem = { name, price };
+  document.getElementById('spDrinkName').textContent = name;
+  document.getElementById('sweetnessPickerOverlay').classList.add('open');
+}
+
+function addWalkinWithSweetness(sweetness) {
+  if (!wiSelectedItem) return;
+  wiCartLines.push({ name: wiSelectedItem.name, price: wiSelectedItem.price, sweetness });
+  wiSelectedItem = null;
+  document.getElementById('sweetnessPickerOverlay').classList.remove('open');
+  renderWiCart();
+  showToast(`Added — ${sweetness} 🍵`);
+}
+
+function renderWiCart() {
+  const c = document.getElementById('walkinCart');
+  if (!wiCartLines.length) { c.innerHTML = ''; updateWiTotal(); return; }
+  c.innerHTML = '';
+  wiCartLines.forEach((line, idx) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#fef9f0;border-radius:10px;margin-bottom:6px;gap:8px;';
+    row.innerHTML = `
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:500;color:var(--text);">${line.name}</div>
+        <div style="font-size:11px;color:var(--text-soft);">${line.sweetness}</div>
+      </div>
+      <div style="font-size:13px;font-weight:600;color:var(--green-dark);">$${line.price}</div>
+      <button onclick="removeWiLine(${idx})" style="background:none;border:none;color:#cc3333;font-size:15px;cursor:pointer;padding:0;">✕</button>`;
+    c.appendChild(row);
+  });
+  updateWiTotal();
+}
+
+function removeWiLine(idx) {
+  wiCartLines.splice(idx, 1);
+  renderWiCart();
+}
+
+function updateWiTotal() {
+  const total = wiCartLines.reduce((s, l) => s + l.price, 0);
+  document.getElementById('walkinTotal').textContent = '$' + total;
+  document.getElementById('walkinLogBtn').disabled = total === 0;
+}
+
+async function logWalkin() {
+  const first = document.getElementById('wi-first').value.trim();
+  const last  = document.getElementById('wi-last').value.trim();
+  if (!first||!last) { showToast("Please enter the customer's name"); return; }
+  if (!wiCartLines.length) return;
+  const total = wiCartLines.reduce((s, l) => s + l.price, 0);
+  const itemsSummary = wiCartLines.map(l => `1x ${l.name} (${l.sweetness})`).join(', ');
+  const sale = {
+    name: first+' '+last, phone:'—', slot:'Walk-in', notes:'',
+    items: itemsSummary, total, status:'picked', type:'walkin'
+  };
+  showToast('Saving...');
+  const result = await sbInsert(sale);
+  if (!result) { showToast('⚠️ Error saving — try again'); return; }
+  logToSheets({...sale, walkin:true});
+  await loadOrders(); renderAll();
+  document.getElementById('walkinOverlay').classList.remove('open');
+  showToast(`✅ Walk-in logged — ${first} · $${total}`);
+}
+
+// ── EDIT ORDER ──
+let editingOrder = null;
+let editingItems = [];
+
+const MENU_PRICES = {
+  '#1':6,'#2':6,'#3':6,'#4':6,'#5':6,'#6':7,'#7':7,'#8':7,'#9':7
+};
+
+function openEditOrder(id) {
+  const o = orders.find(o => o.id === id);
+  if (!o) return;
+  editingOrder = o;
+  editingItems = (o.items||'').split(',').map(raw => raw.trim()).filter(Boolean);
+  document.getElementById('editOrderName').textContent = o.name + ' · ' + o.slot;
+  renderEditItems();
+  document.getElementById('editOrderOverlay').classList.add('open');
+}
+
+function renderEditItems() {
+  const container = document.getElementById('editOrderItems');
+  if (!editingItems.length) {
+    container.innerHTML = `<div style="text-align:center;color:var(--text-soft);padding:20px;font-size:13px;">⚠️ No items left — save to remove order entirely or cancel.</div>`;
+    document.getElementById('editOrderTotal').textContent = '$0';
+    return;
+  }
+  container.innerHTML = '';
+  let total = 0;
+  editingItems.forEach((item, idx) => {
+    const qty      = parseInt((item.match(/^(\d+)x/)||[])[1]||1);
+    const body     = item.replace(/^\d+x\s*/,'');
+    const nameOnly = body.replace(/\s*\([^)]+\)\s*$/,'').trim();
+    const num      = getItemNumber(nameOnly) || '';
+    const price    = MENU_PRICES[num] || 0;
+    total += qty * price;
+
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--cream-dark);';
+    row.innerHTML = `
+      <div style="font-family:'DM Serif Display',serif;font-size:22px;color:var(--green-dark);min-width:36px;font-weight:700;">${num}</div>
+      <div style="flex:1;font-size:12px;color:var(--text);line-height:1.4;">${body}</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+        <button onclick="changeEditQty(${idx},-1)" style="width:28px;height:28px;border-radius:50%;border:none;background:var(--cream-dark);color:var(--text-mid);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">−</button>
+        <span style="font-weight:700;font-size:15px;min-width:20px;text-align:center;">${qty}</span>
+        <button onclick="changeEditQty(${idx},1)" style="width:28px;height:28px;border-radius:50%;border:none;background:var(--green-dark);color:var(--cream);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">+</button>
+        <button onclick="removeEditItem(${idx})" style="background:none;border:none;color:#cc3333;font-size:16px;cursor:pointer;padding:0;margin-left:4px;">✕</button>
+      </div>`;
+    container.appendChild(row);
+  });
+  document.getElementById('editOrderTotal').textContent = '$' + total;
+}
+
+function removeEditItem(idx) {
+  editingItems.splice(idx, 1);
+  renderEditItems();
+}
+
+function changeEditQty(idx, delta) {
+  const item  = editingItems[idx];
+  const match = item.match(/^(\d+)x\s*(.*)/);
+  if (!match) return;
+  let qty  = parseInt(match[1]) + delta;
+  const rest = match[2];
+  if (qty <= 0) {
+    editingItems.splice(idx, 1);
+  } else {
+    editingItems[idx] = `${qty}x ${rest}`;
+  }
+  renderEditItems();
+}
+
+async function saveEditOrder() {
+  if (!editingOrder) return;
+  if (!editingItems.length) {
+    if (!confirm('No items left — this will delete the entire order. Continue?')) return;
+    await sbDelete(editingOrder.id);
+    document.getElementById('editOrderOverlay').classList.remove('open');
+    await loadOrders(); renderAll();
+    showToast('🗑 Order removed');
+    return;
+  }
+  let total = 0;
+  editingItems.forEach(item => {
+    const qty  = parseInt((item.match(/^(\d+)x/)||[])[1]||1);
+    const body = item.replace(/^\d+x\s*/,'');
+    const nameOnly = body.replace(/\s*\([^)]+\)\s*$/,'').trim();
+    const num  = getItemNumber(nameOnly) || '';
+    total += qty * (MENU_PRICES[num] || 0);
+  });
+  const newItems = editingItems.join(', ');
+  await sbUpdate(editingOrder.id, { items: newItems, total });
+  document.getElementById('editOrderOverlay').classList.remove('open');
+  await loadOrders(); renderAll();
+  showToast('✅ Order updated');
+}
+
+// ── TICKET ──
+function openTicket(id) {
+  const o = orders.find(o=>o.id===id); if (!o) return;
+  const firstName = o.name.split(' ')[0];
+  const itemsHtml = (o.items||'').split(',').map(i=>`
+    <div class="ticket-item">
+      <div class="ticket-qty">•</div>
+      <div><div class="ticket-item-name">${i.trim()}</div></div>
+    </div>`).join('');
+  document.getElementById('ticketCard').innerHTML = `
+    <div class="ticket-eyebrow">${o.walkin?'Walk-in':'Pre-Order'} · ${o.slot}</div>
+    <div class="ticket-name">${firstName}</div>
+    <div class="ticket-slot">${o.name} · $${o.total}</div>
+    <div class="ticket-divider"></div>
+    ${itemsHtml}
+    ${o.notes?`<div class="ticket-notes">📝 ${o.notes}</div>`:''}`;
+  const row = document.getElementById('ticketActionRow');
+  if (o.status==='pending')        row.innerHTML=`<button class="ticket-action ta-confirm" onclick="confirmPayment(${id});closeTicket()">✅ Confirm Payment</button>`;
+  else if (o.status==='confirmed') row.innerHTML=`<button class="ticket-action ta-ready" onclick="markReady(${id});closeTicket()">🔔 Notify Ready</button>`;
+  else if (o.status==='ready')     row.innerHTML=`<button class="ticket-action ta-picked" onclick="markPickedUp(${id});closeTicket()">Picked Up ✓</button>`;
+  else row.innerHTML='';
+  document.getElementById('ticketOverlay').classList.add('open');
+}
+function closeTicket() { document.getElementById('ticketOverlay').classList.remove('open'); }
+
+// ── HELPERS ──
+function closeOutside(e, id) { if (e.target===document.getElementById(id)) document.getElementById(id).classList.remove('open'); }
+function showToast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2800); }
+window.addEventListener('load', ()=>document.getElementById('passInput').focus());
 
 let orders = [];
 
