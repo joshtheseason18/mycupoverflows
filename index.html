@@ -540,6 +540,16 @@ function dismissSplash() {
   document.getElementById('splash').classList.add('hidden');
 }
 
+// ══════════════════════════════════════════════════════
+// EVENT CONFIGURATION — update these for each new event
+// ══════════════════════════════════════════════════════
+const EVENT_ACTIVE         = false;       // ← flip to true when an event is scheduled
+const EVENT_DATE           = '';          // ← set to 'YYYY-MM-DD' for the event day
+const MORNING_CUTOFF_TIME  = '09:45:00';  // ← time morning slot closes (pickup starts)
+const AFTERNOON_CUTOFF_TIME = '12:00:00'; // ← time afternoon slot closes (pickup starts)
+const ALL_CLOSED_TIME      = '13:00:00';  // ← time entire site locks (event ends)
+// ══════════════════════════════════════════════════════
+
 const SUPABASE_URL = 'https://aexhnoajcxmjcgnfqnsv.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFleGhub2FqY3htamNnbmZxbnN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4ODI2NTQsImV4cCI6MjA5MDQ1ODY1NH0.M8bi4X7yr-TghM7H5TGS5l3g88biJZxSWHEy8TcWIDA';
 const SHEETS_URL   = 'https://script.google.com/macros/s/AKfycbyMUP1Op7Wra8m3a25wFLH9aIsgtkorudZKOjptBiMxPYVFWnsbWwPFG6F_xXvUqJTj/exec';
@@ -844,37 +854,44 @@ function removeFromSummary(key) {
 }
 function initSlots() {
   const now = new Date();
+  const morningSlot   = document.getElementById('slot-morning');
+  const afternoonSlot = document.getElementById('slot-afternoon');
 
-  // ── IMPORTANT: Update these dates for each new event ──
-  const EVENT_DATE = new Date().toLocaleDateString('en-CA'); // defaults to today; override per event
+  // ── No active event — lock both slots ──
+  if (!EVENT_ACTIVE) {
+    [morningSlot, afternoonSlot].forEach(s => {
+      s.classList.add('disabled');
+      s.onclick = null;
+      s.querySelector('.slot-cutoff').textContent = 'No Event';
+    });
+    document.getElementById('slot-notice').textContent = '📣 Pre-orders will open when the next event is announced.';
+    document.getElementById('slot-notice').style.display = 'block';
+    // Clear any previously selected slot
+    if (selectedSlot) { selectedSlot = ''; saveState(); }
+    return;
+  }
 
-  // Morning slot closes when pickup begins
-  const morningCutoff  = new Date(EVENT_DATE + 'T09:45:00');
-  // Afternoon slot closes when pickup begins
-  const afternoonCutoff = new Date(EVENT_DATE + 'T12:00:00');
+  // ── Active event — apply time-based cutoffs ──
+  const eventDate       = EVENT_DATE || new Date().toLocaleDateString('en-CA');
+  const morningCutoff   = new Date(eventDate + 'T' + MORNING_CUTOFF_TIME);
+  const afternoonCutoff = new Date(eventDate + 'T' + AFTERNOON_CUTOFF_TIME);
 
   if (now >= morningCutoff) {
-    const morningSlot = document.getElementById('slot-morning');
     morningSlot.classList.add('disabled');
     morningSlot.onclick = null;
     document.getElementById('morning-cutoff').textContent = 'Closed';
     document.getElementById('slot-notice').style.display = 'block';
-    // Clear selection if this slot was already chosen
     if (selectedSlot && selectedSlot.toLowerCase().includes('before')) {
-      selectedSlot = '';
-      saveState();
+      selectedSlot = ''; saveState();
     }
   }
 
   if (now >= afternoonCutoff) {
-    const afternoonSlot = document.getElementById('slot-afternoon');
     afternoonSlot.classList.add('disabled');
     afternoonSlot.onclick = null;
-    document.getElementById('slot-afternoon').querySelector('.slot-cutoff').textContent = 'Closed';
-    // Clear selection if this slot was already chosen
+    afternoonSlot.querySelector('.slot-cutoff').textContent = 'Closed';
     if (selectedSlot && selectedSlot.toLowerCase().includes('after')) {
-      selectedSlot = '';
-      saveState();
+      selectedSlot = ''; saveState();
     }
   }
 }
@@ -1040,19 +1057,32 @@ window.addEventListener('load', () => {
   // Re-check slot cutoffs every 30s in case page was loaded before a cutoff
   setInterval(initSlots, 30000);
 
-  // ── All pre-ordering closed (only after afternoon slot ends at 1:00pm) ──
-  // Uses its own `now` so it is always correctly evaluated
-  const now = new Date();
-  const EVENT_DATE_CLOSE = new Date().toLocaleDateString('en-CA');
-  const allClosed = new Date(EVENT_DATE_CLOSE + 'T13:00:00');
-  if (now >= allClosed) {
+  // ── Lock ordering based on EVENT_ACTIVE flag and time ──
+  if (EVENT_ACTIVE) {
+    // Event is scheduled — only lock after it ends
+    const now = new Date();
+    const eventDate = EVENT_DATE || new Date().toLocaleDateString('en-CA');
+    const allClosed = new Date(eventDate + 'T' + ALL_CLOSED_TIME);
+    if (now >= allClosed) {
+      const orderTab = document.querySelector('.tab[onclick="showTab(\'order\')"]');
+      if (orderTab) {
+        orderTab.onclick = () => showToast('⏰ Pre-orders are now closed. See you next time!');
+        orderTab.style.opacity = '0.5';
+      }
+      document.getElementById('cartBar').querySelector('.cart-btn').onclick = () =>
+        showToast('⏰ Pre-orders are now closed. See you next time!');
+      document.querySelectorAll('.qty-ctrl, .qty-btn').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.menu-card .item-body').forEach(el => { el.style.cursor = 'default'; el.onclick = null; });
+    }
+  } else {
+    // No active event — lock ordering entirely
     const orderTab = document.querySelector('.tab[onclick="showTab(\'order\')"]');
     if (orderTab) {
-      orderTab.onclick = () => showToast('⏰ Pre-orders are now closed. See you next time!');
+      orderTab.onclick = () => showToast('📣 Pre-orders open when the next event is announced!');
       orderTab.style.opacity = '0.5';
     }
     document.getElementById('cartBar').querySelector('.cart-btn').onclick = () =>
-      showToast('⏰ Pre-orders are now closed. See you next time!');
+      showToast('📣 Pre-orders open when the next event is announced!');
     document.querySelectorAll('.qty-ctrl, .qty-btn').forEach(el => el.style.display = 'none');
     document.querySelectorAll('.menu-card .item-body').forEach(el => { el.style.cursor = 'default'; el.onclick = null; });
   }
